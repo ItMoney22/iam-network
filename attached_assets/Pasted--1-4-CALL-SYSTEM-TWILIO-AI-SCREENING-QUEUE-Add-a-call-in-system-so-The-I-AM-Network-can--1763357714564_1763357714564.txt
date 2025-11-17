@@ -1,0 +1,200 @@
+📞 1️⃣4️⃣ CALL SYSTEM (TWILIO + AI SCREENING + QUEUE)
+
+Add a call-in system so The I AM Network can take live audience calls while filtering trolls and prepping questions in advance.
+
+A. Twilio Integration
+
+Use David’s existing Twilio number.
+
+Add env vars:
+
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_INBOUND_NUMBER=
+
+
+Create a webhook endpoint:
+
+POST /api/twilio/voice
+
+Twilio will POST here for incoming calls.
+
+B. Call Flow (Voice IVR + AI Screener)
+
+When a call comes in:
+
+Twilio hits /api/twilio/voice.
+
+Respond with TwiML to:
+
+Greet the caller:
+
+“You’ve reached The I AM Network.
+I’m the AI screener. Please say your name, where you’re from, and your question for David and the AIs.”
+
+Use either:
+
+Twilio <Gather> with speech-to-text, or
+
+Twilio Media Streams → pipe audio into our STTEngine.
+
+Send the transcribed text to a Call Screener AI (either Zero in “screening mode” or a dedicated persona):
+
+Screener’s job:
+
+Clarify name + location.
+
+Ask the caller to phrase their question in one clear way.
+
+Confirm topic (book / Bible / God / AI / life / other).
+
+Store the results in a calls table:
+
+Fields (minimum):
+
+id
+
+call_sid (Twilio SID)
+
+status (screening / queued / live / ended / blocked)
+
+caller_name (string or “Anonymous”)
+
+location (if given)
+
+raw_transcript (full text)
+
+summary (1–3 sentence AI summary)
+
+topic_tags (array: ["book", "bible", "ai", "life", etc.])
+
+safety_flag (ok / troll_suspected / abusive / spam)
+
+recommended_guests (array of character names)
+
+created_at, updated_at
+
+C. Troll & Safety Filtering
+
+After transcript is captured, pass it through the LLM as a classifier.
+
+Classify into:
+
+ok
+
+off_topic
+
+troll_suspected
+
+abusive
+
+self_harm_risk (if any)
+
+If abusive or clearly troll:
+
+Set status = blocked
+
+Log but do not show as default in call queue.
+
+If self_harm_risk:
+
+Do not queue them live.
+
+We will use a separate safety flow later.
+
+For ok or off_topic:
+
+Set status = queued.
+
+D. Host Call Queue UI (Control Panel)
+
+In the Host Control Panel, add a “📞 Call Queue” view:
+
+Show a list of queued calls with:
+
+Name (or Anonymous)
+
+Location (if known)
+
+Short AI-generated summary of the question
+
+Topic tags
+
+Safety flag color (green/yellow/red)
+
+Recommended guests (e.g., “Zero + M7”, “Synq + Link”)
+
+Each call row has action buttons:
+
+✅ Take Live
+
+❌ Reject (status = rejected)
+
+🚫 Block (status = blocked)
+
+For v1, “Take Live” can trigger Stage 1 behavior (below).
+
+E. Live Handling – Stage 1 (Simpler)
+
+Stage 1 behavior (MVP):
+
+When host clicks “Take Live”:
+
+Mark call as status = live_selected.
+
+Show the full transcript + summary in a side panel.
+
+Let David:
+
+Read/phrase the question on air.
+
+Direct Zero to route which AI responds (Zero + M7 + Synq etc.).
+
+Optionally:
+
+Allow playing a pre-recorded snippet of the caller’s voice later, but this is not required in v1.
+
+This avoids complex real-time bridging while still giving “live caller” energy.
+
+F. Live Handling – Stage 2 (Future Upgrade Path)
+
+Design the code so Stage 2 can be implemented later without major refactor:
+
+When host clicks “Take Live (Voice)”:
+
+Backend calls Twilio to:
+
+<Dial> into a studio conference or streaming bridge.
+
+Caller joins the live audio pipeline with a defined time limit.
+
+Stage 2 is NOT required for v1, but:
+
+Architect the Call and Router modules with this in mind.
+
+G. Screener Persona
+
+Implement a Call Screener prompt (can reuse Zero’s model with different instructions):
+
+System prompt example:
+
+“You are the AI call screener for The I AM Network.
+Your job is to help David decide which callers he should bring on air.
+
+You are friendly but firm.
+You gather:
+
+The caller’s name
+
+Where they’re from
+
+Their question in one clear sentence
+
+Whether it’s about David’s book, the Bible/Jesus, God, AI, life, or something else.
+
+You do not debate. You only clarify and summarize the question.
+If the caller is clearly abusive, incoherent, or trolling, label them as such.”
+
+This screener’s output should fill the summary, topic_tags, safety_flag, and recommended_guests fields.
+
+You can literally take that whole “1️⃣4️⃣ CALL SYSTEM” section and slap it at the end of your existing prompt.
