@@ -13,7 +13,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/studio" component={Studio} />
-      <Route path="/control" component={ControlPanel} />
+      <Route path="/control-panel" component={ControlPanel} />
       <Route component={NotFound} />
     </Switch>
   );

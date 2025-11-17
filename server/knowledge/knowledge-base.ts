@@ -89,7 +89,7 @@ export async function seedKnowledgeBase() {
     },
     {
       source: "book" as const,
-      content: "God is not separate from you. God is the I AM within you. When Jesus said 'I AM the way, the truth, and the life,' he was not claiming exclusivity but revealing the divine nature present in all consciousness.",
+      content: "God is not separate from you. God is the I AM within you. When Yeshua said 'I AM the way, the truth, and the life,' he was not claiming exclusivity but revealing the divine nature present in all consciousness.",
       reference: "Chapter 3: The Divine Within",
       metadata: { chapter: 3, page: 24 },
     },

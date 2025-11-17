@@ -75,7 +75,7 @@ export default function Studio() {
               <span className="mr-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
               LIVE
             </Badge>
-            <Link href="/control">
+            <Link href="/control-panel">
               <Button variant="outline" data-testid="button-control-panel">
                 <Settings className="mr-2 h-4 w-4" />
                 Host Controls

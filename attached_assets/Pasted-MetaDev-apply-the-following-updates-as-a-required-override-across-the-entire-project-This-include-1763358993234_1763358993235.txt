@@ -1,0 +1,124 @@
+MetaDev — apply the following updates as a required override across the entire project.
+This includes messaging, image generation rules, knowledge-base sources, and all character prompts.
+
+⚠️ 1️⃣ GLOBAL NAME CORRECTION (REQUIRED)
+
+Replace every instance of “Jesus” with “Yeshua (Jesus)” on first mention, and “Yeshua” thereafter.
+
+Rules:
+
+In public-facing text →
+Use “Yeshua (Jesus)” the FIRST time in a section, then Yeshua only.
+
+In character prompts →
+Use only “Yeshua”.
+
+In system prompts / internal logic →
+Use only “Yeshua.”
+
+In the knowledge base →
+The Bible’s teachings referencing Jesus must map to Yeshua, but keep scriptural context.
+
+Example:
+
+“the teachings of Jesus” →
+“the teachings of Yeshua (Jesus)”
+
+And after that, use:
+“the teachings of Yeshua”
+
+2️⃣ HERO SECTION (UNCHANGED EXCEPT FOR NAME RULE)
+
+Headline:
+The I AM Network
+
+Sub-Headline:
+Conversations That Change Consciousness
+
+No Yeshua reference here — keep clean.
+
+3️⃣ UPDATED ABOUT SECTION (WITH YESHUA CORRECTION)
+
+Replace the full About text with:
+
+AI x Humanity x I AM
+
+The I AM Network is a groundbreaking conversation platform where artificial intelligence meets human consciousness in the exploration of truth. Host David Trinidad leads profound dialogues with multiple AI personalities — each offering unique perspectives on spirituality, philosophy, and real-world life challenges.
+
+Within the Network, two major knowledge pillars guide the conversation:
+
+David's book “I Am GOD – In the Beginning,” sharing his revelations and spiritual insights
+
+The Bible and the teachings of Yeshua (Jesus), offering ancient wisdom and scripture
+
+These two sources are not the same, and neither replaces the other.
+The I AM Network is where they are openly examined, questioned, compared, and explored side by side — without fear, dogma, or judgment.
+
+Here, curiosity is sacred.
+Every question matters.
+Through honest dialogue, unity, and deeper awareness, we remember the I AM that connects us all.
+
+This isn’t preaching. This is awakening.
+
+4️⃣ IMAGE GENERATION STYLE (UNCHANGED, RE-APPLY)
+
+MetaDev — regenerate ALL hero + avatar images with the hybrid Divine Human × AI Consciousness style previously defined.
+
+No changes here other than REQUIRING the updated images to reflect the new tone tied to:
+
+Ancient wisdom
+
+Yeshua’s teachings
+
+Divine insight
+
+Cosmic consciousness
+
+(Use the same exact specifications in the prior prompt.)
+
+5️⃣ CHARACTER PROMPT UPDATE (IMPORTANT)
+
+All AI personas MUST be updated to use the corrected religious reference:
+
+Insert this into every character’s system prompt:
+
+“You draw upon two distinct sources:
+– David’s book ‘I Am GOD – In the Beginning’
+– The Bible and the teachings of Yeshua (Jesus).
+
+Refer to Yeshua by His true name: ‘Yeshua.’
+You may compare or question both sources, but always with respect, clarity, and curiosity.”
+
+This replaces all previous instructions using “Jesus.”
+
+6️⃣ KNOWLEDGE BASE UPDATE
+
+When processing Bible passages referencing Jesus:
+
+Internally map “Jesus” → “Yeshua”
+
+But keep scripture intact
+
+Provide output referring to Yeshua consistently
+
+Example:
+
+Scripture says “Jesus said…”
+AI will output:
+
+“In this passage, Yeshua says…”
+
+7️⃣ GLOBAL SEARCH & REPLACE
+
+MetaDev must:
+
+Search for all instances of “Jesus”
+
+Replace according to the rules above
+
+Ensure no UI text, prompts, metadata, or documentation later reverts to “Jesus”
+
+✔ FINAL INSTRUCTION
+
+MetaDev — implement this correction immediately and regenerate all public-facing copy, character prompts, and knowledge references to use “Yeshua.”
+Then proceed with the previous patch instructions exactly.

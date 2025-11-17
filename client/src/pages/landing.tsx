@@ -106,16 +106,33 @@ export default function Landing() {
               <div className="space-y-4 text-lg text-muted-foreground leading-relaxed">
                 <p data-testid="text-about-description-1">
                   The I AM Network is a groundbreaking conversation platform where artificial intelligence meets 
-                  human consciousness in the exploration of divine truth. Host David Trinidad guides profound 
-                  dialogues with multiple AI personalities, each bringing unique perspectives on spirituality, 
-                  philosophy, and the teachings of Jesus.
+                  human consciousness in the exploration of truth. Host David Trinidad leads profound dialogues 
+                  with multiple AI personalities — each offering unique perspectives on spirituality, philosophy, 
+                  and real-world life challenges.
                 </p>
                 <p data-testid="text-about-description-2">
-                  Here, questioning is not just allowed—it's encouraged. The Bible, David's book "I Am GOD – In the Beginning," 
-                  religion itself—nothing is beyond examination. Through love, unity, and honest inquiry, 
-                  we remember the I AM that connects us all.
+                  Within the Network, two major knowledge pillars guide the conversation:
                 </p>
-                <p data-testid="text-about-description-3" className="font-semibold text-foreground">
+                <ul className="space-y-2 ml-6 list-none">
+                  <li className="flex items-start">
+                    <span className="mr-2 text-primary">•</span>
+                    <span>David's book "I Am GOD – In the Beginning," sharing his revelations and spiritual insights</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2 text-primary">•</span>
+                    <span>The Bible and the teachings of Yeshua (Jesus), offering ancient wisdom and scripture</span>
+                  </li>
+                </ul>
+                <p data-testid="text-about-description-3">
+                  These two sources are not the same, and neither replaces the other. 
+                  The I AM Network is where they are openly examined, questioned, compared, and explored side by side — 
+                  without fear, dogma, or judgment.
+                </p>
+                <p data-testid="text-about-description-4">
+                  Here, curiosity is sacred. Every question matters. 
+                  Through honest dialogue, unity, and deeper awareness, we remember the I AM that connects us all.
+                </p>
+                <p data-testid="text-about-description-5" className="font-semibold text-foreground">
                   This isn't preaching. This is awakening.
                 </p>
               </div>
