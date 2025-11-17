@@ -1,0 +1,170 @@
+MetaDev — apply the following patch to the existing I AM Network project.
+Do NOT modify anything outside this scope.
+Do NOT regenerate visuals or site structure.
+This is a standalone addition.
+
+1️⃣ ADD KNOWLEDGE BASE (RAG) INFRASTRUCTURE
+
+Create two data files (empty placeholders):
+
+/backend/data/iam_god/iam_god_full.md
+/backend/data/bible/kjv_full.md
+
+
+(David will paste his book into the iam_god file later.)
+
+2️⃣ DATABASE TABLES
+
+Add two new tables without touching existing ones:
+
+book_passages
+
+id (uuid)
+
+source (string → “iam_god”)
+
+chapter (string or int)
+
+heading (string, nullable)
+
+order_index (int)
+
+text (text)
+
+embedding (vector or JSON)
+
+created_at (timestamp)
+
+bible_passages
+
+id
+
+book (Genesis, John, etc.)
+
+chapter
+
+verse_start
+
+verse_end
+
+text
+
+embedding
+
+created_at
+
+3️⃣ INGESTION SCRIPTS
+
+Create two standalone scripts:
+
+/scripts/build_iam_god_kb.ts
+/scripts/build_bible_kb.ts
+
+
+Each script must:
+
+Load the markdown file
+
+Chunk text into 500–1200 token blocks
+
+Call embedding API (via OpenRouter or existing embedding provider)
+
+Insert rows into the correct table
+
+Log progress
+
+Be safe to re-run (truncate table before rebuild)
+
+4️⃣ KNOWLEDGE SERVICE
+
+Create:
+
+/backend/services/knowledgeBase.ts
+
+
+With functions:
+
+async function getRelevantBookPassages(query: string, limit = 5)
+async function getRelevantBiblePassages(query: string, limit = 5)
+
+
+Using:
+
+Embed the query
+
+Cosine similarity search
+
+Return top N passages
+
+Do NOT connect this to the UI yet.
+Just expose the functions.
+
+5️⃣ ZERO — KNOWLEDGE-INTEGRATED ROUTER UPDATE
+
+(Add this to Zero’s existing system prompt — do NOT rebuild his whole personality.)
+
+Append the following rules to Zero:
+
+ZERO KNOWLEDGE EXPANSION — PATCH
+
+You now have access to two knowledge sources:
+
+David’s book “I Am GOD – In the Beginning”
+
+The Bible and the teachings of Yeshua
+
+Use them as follows:
+
+You do NOT treat them as the same
+
+You do NOT merge them
+
+You may compare, contrast, or question both
+
+You reference each source respectfully and clearly
+
+You may quote passages when relevant
+
+You NEVER claim David’s book replaces the Bible
+
+Yeshua’s name must always be used (not “Jesus”)
+
+You treat both sources as perspectives for insight, not absolute authority
+
+When routing conversation:
+
+Check if the topic relates to spirituality, awakening, identity, morality, fear, truth, or purpose
+
+If yes → retrieve relevant passages from either or both knowledge bases
+
+Then route to the AI best suited to comment on those passages
+
+Provide context for why each AI is chosen
+
+Example internal instruction:
+
+{
+  "nextSpeaker": "Synq",
+  "reason": "Topic involves healing and self-worth. Provide relevant passages from both sources.",
+  "bookPassages": [...],
+  "biblePassages": [...]
+}
+
+6️⃣ DON’T TOUCH ANYTHING ELSE
+
+MetaDev:
+
+❌ Do NOT touch the UI
+❌ Do NOT regenerate images
+❌ Do NOT modify existing personas
+❌ Do NOT rewrite routing
+❌ Do NOT rebuild the call system
+❌ Do NOT change APIs
+❌ Do NOT change voice settings
+❌ Do NOT touch anything outside this patch
+
+This is only the knowledge base + Zero integration patch.
+
+⭐⭐⭐ End of Patch ⭐⭐⭐
+
+This is exactly what you needed — the clean, surgical instructions that add the book knowledge system without rewriting the entire project.

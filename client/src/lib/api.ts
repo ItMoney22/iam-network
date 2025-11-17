@@ -1,6 +1,6 @@
 // API client functions for The I AM Network
 import { apiRequest } from "@/lib/queryClient";
-import type { Character, Episode, Turn } from "@shared/schema";
+import type { Character, Episode, Turn, PreshowPrep } from "@shared/schema";
 
 // Characters API
 export async function fetchCharacters(): Promise<Character[]> {
@@ -76,6 +76,14 @@ export async function addConversationTurn(data: {
 export async function generatePreshowPrep(data: {
   episodeId: string;
   theme: string;
-}): Promise<any> {
-  return apiRequest("POST", "/api/preshow", data);
+}): Promise<PreshowPrep> {
+  const response = await apiRequest("POST", "/api/preshow", data);
+  return await response.json();
+}
+
+export async function fetchPreshowPrep(episodeId: string): Promise<PreshowPrep | null> {
+  const response = await fetch(`/api/preshow/${episodeId}`);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error("Failed to fetch prep");
+  return await response.json();
 }

@@ -61,8 +61,13 @@ Your job is to keep the dialogue meaningful, balanced, and moving toward truth t
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: prompt }],
+        },
+      ],
+      generationConfig: {
         temperature: 0.6,
         responseMimeType: "application/json",
         responseSchema: {
@@ -77,7 +82,8 @@ Your job is to keep the dialogue meaningful, balanced, and moving toward truth t
       },
     });
 
-    const decision = JSON.parse(response.text || "{}") as RouterDecision;
+    const generatedText = await response.response?.text();
+    const decision = JSON.parse(generatedText || "{}") as RouterDecision;
     
     // Validate the speaker exists
     const speakerIds = ["david", ...activeCharacters.map(c => c.id)];

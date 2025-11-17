@@ -146,7 +146,7 @@ Be specific, thoughtful, and grounded in the actual teachings of Yeshua and the 
           parts: [{ text: fullPrompt }],
         },
       ],
-      config: {
+      generationConfig: {
         temperature: 0.8,
         maxOutputTokens: 4000,
         responseMimeType: "application/json",
@@ -191,7 +191,7 @@ Be specific, thoughtful, and grounded in the actual teachings of Yeshua and the 
       },
     });
 
-    const generatedText = result.text;
+    const generatedText = await result.response?.text();
 
     if (!generatedText) {
       throw new Error("No response from Gemini");

@@ -187,6 +187,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/preshow/:episodeId - Get pre-show prep by episode ID
+  app.get("/api/preshow/:episodeId", async (req, res) => {
+    try {
+      const { episodeId } = req.params;
+      const prep = await storage.getPreshowPrepByEpisode(episodeId);
+      
+      if (!prep) {
+        return res.status(404).json({ error: "Prep not found" });
+      }
+      
+      res.json(prep);
+    } catch (error) {
+      console.error("Error fetching preshow prep:", error);
+      res.status(500).json({ error: "Failed to fetch prep" });
+    }
+  });
+
   // POST /api/preshow - Generate pre-show prep sheet
   app.post("/api/preshow", async (req, res) => {
     try {
@@ -205,11 +222,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         participants: activeCharacters,
       });
 
-      // Save to database
-      const prep = await storage.createPreshowPrep({
+      // Validate against insert schema before saving
+      const validatedData = insertPreshowPrepSchema.parse({
         episodeId,
         ...prepData,
       });
+
+      // Save to database
+      const prep = await storage.createPreshowPrep(validatedData);
 
       res.json(prep);
     } catch (error) {

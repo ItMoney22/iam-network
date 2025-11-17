@@ -10,12 +10,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, Volume2, VolumeX, Play, Pause, Loader2 } from "lucide-react";
+import { ChevronLeft, Volume2, VolumeX, Play, Pause, Loader2, Sparkles, BookOpen } from "lucide-react";
 import { Link } from "wouter";
-import { fetchCharacters, toggleCharacterActive, createEpisode } from "@/lib/api";
+import { fetchCharacters, toggleCharacterActive, createEpisode, generatePreshowPrep, fetchPreshowPrep } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Character } from "@shared/schema";
+import type { Character, PreshowPrep } from "@shared/schema";
 
 import zeroAvatar from "@assets/generated_images/Zero_wise_director_portrait_435ea3ff.png";
 import m7Avatar from "@assets/generated_images/M7_skeptic_portrait_1a9bec4a.png";
@@ -58,6 +58,7 @@ export default function ControlPanel() {
   const [theme, setTheme] = useState("");
   const [episodeStatus, setEpisodeStatus] = useState<"draft" | "live" | "paused">("draft");
   const [mutedCharacters, setMutedCharacters] = useState<Set<string>>(new Set());
+  const [currentEpisodeId, setCurrentEpisodeId] = useState<string | null>(null);
 
   const { data: characters = [], isLoading: loadingCharacters } = useQuery({
     queryKey: ["/api/characters"],
@@ -88,8 +89,9 @@ export default function ControlPanel() {
   const createEpisodeMutation = useMutation({
     mutationFn: (data: { title: string; theme: string; participants: string[] }) =>
       createEpisode(data),
-    onSuccess: () => {
+    onSuccess: (episode) => {
       queryClient.invalidateQueries({ queryKey: ["/api/episodes"] });
+      setCurrentEpisodeId(episode.id);
       toast({
         title: "Episode Created",
         description: "New episode started successfully",
@@ -107,6 +109,32 @@ export default function ControlPanel() {
     },
   });
 
+  const generatePrepMutation = useMutation({
+    mutationFn: (data: { episodeId: string; theme: string }) =>
+      generatePreshowPrep(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/preshow", currentEpisodeId] });
+      toast({
+        title: "Prep Generated",
+        description: "Zero has prepared your episode questions and structure",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to generate prep sheet",
+        variant: "destructive",
+      });
+      console.error("Generate prep error:", error);
+    },
+  });
+
+  const { data: prep, isLoading: loadingPrep } = useQuery({
+    queryKey: ["/api/preshow", currentEpisodeId],
+    queryFn: () => currentEpisodeId ? fetchPreshowPrep(currentEpisodeId) : Promise.resolve(null),
+    enabled: !!currentEpisodeId,
+  });
+
   const handleToggleCharacter = (char: Character) => {
     toggleMutation.mutate({ id: char.id, isActive: !char.isActive });
   };
@@ -120,6 +148,31 @@ export default function ControlPanel() {
         next.add(id);
       }
       return next;
+    });
+  };
+
+  const handleGeneratePrep = () => {
+    if (!theme.trim()) {
+      toast({
+        title: "Theme Required",
+        description: "Please enter an episode theme first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!currentEpisodeId) {
+      toast({
+        title: "Episode Required",
+        description: "Please create an episode first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    generatePrepMutation.mutate({
+      episodeId: currentEpisodeId,
+      theme: theme,
     });
   };
 
@@ -205,7 +258,7 @@ export default function ControlPanel() {
                             <div
                               className="w-12 h-12 rounded-full overflow-hidden ring-2"
                               style={{
-                                ringColor: char.auraColor,
+                                outlineColor: char.auraColor,
                                 boxShadow: `0 0 20px ${char.auraColor}40`,
                               }}
                             >
@@ -331,50 +384,131 @@ export default function ControlPanel() {
           <div className="space-y-6">
             <Card className="bg-white/5 backdrop-blur border-white/10">
               <CardHeader>
-                <CardTitle className="text-white">Pre-Show Prep</CardTitle>
+                <CardTitle className="text-white flex items-center justify-between">
+                  Pre-Show Prep
+                  {currentEpisodeId && !prep && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleGeneratePrep}
+                      disabled={generatePrepMutation.isPending || !theme.trim()}
+                      data-testid="button-generate-prep"
+                    >
+                      {generatePrepMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          Generate
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </CardTitle>
                 <CardDescription className="text-white/60">
-                  AI-generated questions and guidance
+                  {prep ? "Zero-powered episode preparation" : "AI-generated questions and guidance"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="questions" className="border-white/10">
-                    <AccordionTrigger className="text-white hover:text-white/80" data-testid="accordion-trigger-questions">
-                      Suggested Questions ({mockPrepQuestions.length})
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <ScrollArea className="h-[300px]">
-                        <ul className="space-y-3">
-                          {mockPrepQuestions.map((q, i) => (
-                            <li key={i} className="text-white/70 text-sm leading-relaxed">
-                              {i + 1}. {q}
-                            </li>
+                {loadingPrep ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : prep ? (
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="segments" className="border-white/10">
+                      <AccordionTrigger className="text-white hover:text-white/80" data-testid="accordion-trigger-segments">
+                        Episode Structure ({(prep.segmentStructure as any)?.acts?.length || 0} Acts)
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-3">
+                          {((prep.segmentStructure as any)?.acts || []).map((act: any, i: number) => (
+                            <div key={i} className="bg-white/5 p-3 rounded-lg">
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-white font-semibold text-sm">{act.name}</p>
+                                <Badge variant="outline" className="text-xs">{act.duration}</Badge>
+                              </div>
+                              <p className="text-white/60 text-xs">{act.description}</p>
+                            </div>
                           ))}
-                        </ul>
-                      </ScrollArea>
-                    </AccordionContent>
-                  </AccordionItem>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
 
-                  <AccordionItem value="tips" className="border-white/10">
-                    <AccordionTrigger className="text-white hover:text-white/80" data-testid="accordion-trigger-tips">
-                      Hosting Tips
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-2">
-                      <p className="text-white/70 text-sm">
-                        ✨ Let Zero guide the flow - trust the AI director
-                      </p>
-                      <p className="text-white/70 text-sm">
-                        💭 Your voice always takes priority - interrupt when needed
-                      </p>
-                      <p className="text-white/70 text-sm">
-                        🎯 Circle back to Love, Unity, and I AM awareness
-                      </p>
-                      <p className="text-white/70 text-sm">
-                        ⚡ Allow respectful challenge - growth comes from inquiry
-                      </p>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                    <AccordionItem value="questions" className="border-white/10">
+                      <AccordionTrigger className="text-white hover:text-white/80" data-testid="accordion-trigger-questions">
+                        Host Questions ({(prep.hostQuestions as any[])?.length || 0})
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <ScrollArea className="h-[400px]">
+                          <div className="space-y-4 pr-4">
+                            {((prep.hostQuestions as any[]) || []).map((q: any, i: number) => (
+                              <div key={i} className="bg-white/5 p-3 rounded-lg space-y-2">
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="text-white font-semibold text-sm flex-1">{q.question}</p>
+                                  <Badge variant={q.source === "book" ? "default" : "secondary"} className="text-xs shrink-0">
+                                    <BookOpen className="w-3 h-3 mr-1" />
+                                    {q.source === "book" ? "Book" : "Bible"}
+                                  </Badge>
+                                </div>
+                                <p className="text-white/60 text-xs italic">{q.context}</p>
+                                <p className="text-white/40 text-xs">{q.passage}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="ai-prompts" className="border-white/10">
+                      <AccordionTrigger className="text-white hover:text-white/80" data-testid="accordion-trigger-ai-prompts">
+                        AI Participant Prompts
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <ScrollArea className="h-[300px]">
+                          <div className="space-y-3 pr-4">
+                            {Object.entries((prep.aiPrompts as Record<string, string>) || {}).map(([charId, prompt]) => (
+                              <div key={charId} className="bg-white/5 p-3 rounded-lg">
+                                <p className="text-white font-semibold text-sm mb-2 capitalize">{charId}</p>
+                                <p className="text-white/70 text-xs leading-relaxed">{prompt}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                ) : (
+                  <div className="text-center py-8 space-y-3">
+                    <p className="text-white/50 text-sm">
+                      {currentEpisodeId 
+                        ? "Generate AI-powered prep questions and segment structure for this episode"
+                        : "Create an episode to generate prep"}
+                    </p>
+                    {currentEpisodeId && (
+                      <Button
+                        onClick={handleGeneratePrep}
+                        disabled={generatePrepMutation.isPending || !theme.trim()}
+                        data-testid="button-generate-prep-empty"
+                      >
+                        {generatePrepMutation.isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Generate Prep Sheet
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
