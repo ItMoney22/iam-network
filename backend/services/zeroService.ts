@@ -4,10 +4,15 @@
  */
 
 import OpenAI from 'openai';
+import Replicate from 'replicate';
 import { zeroKB } from './zeroKnowledgeBase';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+});
+
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_KEY,
 });
 
 export interface ZeroMessage {
@@ -153,18 +158,34 @@ class ZeroService {
   }
 
   /**
-   * Convert text to speech using OpenAI TTS
+   * Convert text to speech using Replicate MiniMax Speech 2.6 Turbo
+   * Voice options: male_zh (default), female_zh, male_en, female_en
    */
-  async textToSpeech(text: string, voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' = 'onyx'): Promise<Buffer> {
+  async textToSpeech(text: string, voice: 'male_zh' | 'female_zh' | 'male_en' | 'female_en' = 'male_en'): Promise<Buffer> {
     try {
-      const mp3 = await openai.audio.speech.create({
-        model: 'tts-1',
-        voice: voice,
-        input: text,
-      });
+      const output = await replicate.run(
+        "minimax/speech-2.6-turbo:c33a8267f6fb8cc3e92b5f33bd8abd5d8cc18b1a8e86c78ad90eeb1ae40ff24f",
+        {
+          input: {
+            text: text,
+            voice: voice,
+            audio_sample_rate: 32000,
+            bitrate: 128000,
+          }
+        }
+      );
 
-      const buffer = Buffer.from(await mp3.arrayBuffer());
-      return buffer;
+      // The output is a URL to the audio file
+      const audioUrl = output as string;
+
+      // Fetch the audio file
+      const response = await fetch(audioUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audio: ${response.statusText}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
     } catch (error) {
       console.error('Text-to-speech error:', error);
       throw new Error('Failed to generate speech');
