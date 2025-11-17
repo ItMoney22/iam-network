@@ -23,9 +23,12 @@ class ZeroKnowledgeBaseService {
   private dataPath: string;
 
   constructor() {
-    // In production (Railway), data is at /app/backend/data/zero
-    // In development, it's relative to this file
-    this.dataPath = path.join(__dirname, '../data/zero');
+    // In production (bundled), data is at dist/data/zero (relative to bundle)
+    // In development, data is at backend/data/zero (relative to this file)
+    const isProduction = process.env.NODE_ENV === 'production';
+    this.dataPath = isProduction
+      ? path.join(__dirname, 'data/zero')
+      : path.join(__dirname, '../data/zero');
   }
 
   /**
