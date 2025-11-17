@@ -5,6 +5,11 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export interface ZeroKnowledge {
   systemPrompt: string;
@@ -18,6 +23,8 @@ class ZeroKnowledgeBaseService {
   private dataPath: string;
 
   constructor() {
+    // In production (Railway), data is at /app/backend/data/zero
+    // In development, it's relative to this file
     this.dataPath = path.join(__dirname, '../data/zero');
   }
 
