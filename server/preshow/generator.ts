@@ -1,7 +1,7 @@
 import type { Character } from "@shared/schema";
 import { getRelevantPassages } from "../knowledge/knowledge-base";
 import { z } from "zod";
-import { GoogleGenAI, Type } from "@google/genai";
+import OpenAI from "openai";
 
 interface GeneratePrepOptions {
   theme: string;
@@ -50,13 +50,10 @@ interface PreshowPrepData {
   aiPrompts: Record<string, string>;
 }
 
-// Initialize Gemini client
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL!,
-  },
+// Initialize OpenAI client with Replit integration
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY!,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
 export async function generatePreshowPrep(
@@ -103,7 +100,7 @@ Generate a comprehensive pre-show prep sheet for this episode using the provided
    
    For each act, provide: name, estimated duration, and a brief description of its purpose.
 
-2. HOST QUESTIONS (exactly 10-15 questions): Generate thoughtful questions for David that:
+2. HOST QUESTIONS (MUST generate EXACTLY 12 questions): Generate thoughtful questions for David that:
    - MUST be directly grounded in the knowledge base passages provided above
    - Use specific quotes, concepts, or teachings from those passages
    - Explore the episode theme from multiple angles
@@ -135,87 +132,73 @@ Return your response as a valid JSON object with this exact structure:
   }
 }
 
-Be specific, thoughtful, and grounded in the actual teachings of Yeshua and the I AM principle.`;
+Be specific, thoughtful, and grounded in the actual teachings of Yeshua and the I AM principle.
+
+IMPORTANT: Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
+{
+  "segments": [
+    { "name": string, "duration": string, "description": string }
+  ],
+  "questions": [
+    { "question": string, "context": string, "source": "book" | "bible", "passage": string }
+  ],
+  "aiPrompts": {
+    "characterId": string
+  }
+}`;
 
   try {
-    const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
+    console.log("[generatePreshowPrep] Calling OpenAI for prep generation...");
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are Zero, the AI showrunner for The I AM Network. Generate structured prep sheets in valid JSON format only."
+        },
         {
           role: "user",
-          parts: [{ text: fullPrompt }],
+          content: fullPrompt,
         },
       ],
-      generationConfig: {
-        temperature: 0.8,
-        maxOutputTokens: 4000,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            segments: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  name: { type: Type.STRING },
-                  duration: { type: Type.STRING },
-                  description: { type: Type.STRING },
-                },
-                required: ["name", "duration", "description"],
-              },
-              minItems: 3,
-              maxItems: 3,
-            },
-            questions: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  question: { type: Type.STRING },
-                  context: { type: Type.STRING },
-                  source: { type: Type.STRING, enum: ["book", "bible"] },
-                  passage: { type: Type.STRING },
-                },
-                required: ["question", "context", "source", "passage"],
-              },
-              minItems: 10,
-              maxItems: 15,
-            },
-            aiPrompts: {
-              type: Type.OBJECT,
-            },
-          },
-          required: ["segments", "questions", "aiPrompts"],
-        },
-      },
+      temperature: 0.8,
+      max_tokens: 4000,
+      response_format: { type: "json_object" },
     });
 
-    console.log("[generatePreshowPrep] Gemini result object:", JSON.stringify(result, null, 2));
-    console.log("[generatePreshowPrep] Has response?", !!result.response);
-    
-    const generatedText = await result.response?.text();
-    console.log("[generatePreshowPrep] Generated text length:", generatedText?.length);
+    const generatedText = response.choices[0]?.message?.content;
+    console.log("[generatePreshowPrep] OpenAI response received, length:", generatedText?.length);
 
     if (!generatedText) {
-      console.error("[generatePreshowPrep] No generated text from Gemini. Result:", result);
-      throw new Error("No response from Gemini");
+      console.error("[generatePreshowPrep] No generated text from OpenAI");
+      throw new Error("No response from OpenAI");
     }
 
     // Parse and validate the JSON response
     let parsedData;
     try {
       parsedData = JSON.parse(generatedText);
+      console.log("[generatePreshowPrep] Parsed JSON successfully");
+      console.log("[generatePreshowPrep] segments count:", parsedData.segments?.length);
+      console.log("[generatePreshowPrep] questions count:", parsedData.questions?.length);
+      console.log("[generatePreshowPrep] aiPrompts keys:", Object.keys(parsedData.aiPrompts || {}).length);
     } catch (parseError) {
-      console.error("Failed to parse Gemini JSON response:", generatedText);
-      throw new Error("Invalid JSON response from Gemini");
+      console.error("Failed to parse OpenAI JSON response:", generatedText);
+      throw new Error("Invalid JSON response from OpenAI");
     }
 
     // Validate against schema
     const validationResult = prepResponseSchema.safeParse(parsedData);
     
     if (!validationResult.success) {
-      console.error("Validation failed:", validationResult.error);
+      console.error("[generatePreshowPrep] Validation failed!");
+      console.error("[generatePreshowPrep] Validation errors:", JSON.stringify(validationResult.error.format(), null, 2));
+      console.error("[generatePreshowPrep] Received data sample:", JSON.stringify({
+        segmentsSample: parsedData.segments?.[0],
+        questionsSample: parsedData.questions?.slice(0, 2),
+        aiPromptsSample: Object.keys(parsedData.aiPrompts || {}).slice(0, 2)
+      }, null, 2));
       throw new Error(`Invalid prep sheet structure: ${validationResult.error.message}`);
     }
 

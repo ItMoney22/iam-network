@@ -429,7 +429,7 @@ export default function ControlPanel() {
               <CardHeader>
                 <CardTitle className="text-white flex items-center justify-between">
                   Pre-Show Prep
-                  {currentEpisodeId && !prep && (
+                  {currentEpisodeId && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -441,6 +441,11 @@ export default function ControlPanel() {
                         <>
                           <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                           Generating...
+                        </>
+                      ) : prep ? (
+                        <>
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          Regenerate
                         </>
                       ) : (
                         <>

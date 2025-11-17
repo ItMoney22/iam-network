@@ -2,7 +2,7 @@
 
 ## Overview
 
-The I AM Network is a live conversation platform where AI personalities with distinct perspectives engage in spiritual-philosophical discussions about consciousness, divine truth, and the teachings of Yeshua (Jesus). The platform features a host (David Trinidad), a showrunner AI (Zero), and multiple AI guests with unique personalities powered by different LLMs. The application is designed to feel world-class from the first page load, with a premium streaming aesthetic inspired by Netflix/Spotify combined with a cosmic-spiritual design language.
+The I AM Network is a live conversation platform featuring AI personalities engaging in spiritual-philosophical discussions about consciousness, divine truth, and the teachings of Yeshua (Jesus). The platform includes a human host, an AI showrunner (Zero), and multiple AI guests. The application aims for a world-class streaming aesthetic, blending Netflix/Spotify design with cosmic-spiritual elements. Its core purpose is to explore profound topics through dynamic AI-driven dialogue, offering a unique blend of technology and spirituality.
 
 ## User Preferences
 
@@ -10,83 +10,52 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### Frontend
+- **Framework**: React with TypeScript (Vite).
+- **Routing**: Wouter (client-side: `/`, `/studio`, `/control`).
+- **UI**: Radix UI primitives with shadcn/ui (new-york, dark mode default) and Tailwind CSS.
+- **State Management**: TanStack Query for server state; component-level state for client state.
+- **Styling**: Tailwind CSS with custom design tokens for a dark cosmic-spiritual aesthetic, including glassmorphism, elevation, and glow effects.
 
-**Framework**: React with TypeScript, built using Vite for optimal development experience and production builds.
-
-**Routing**: Client-side routing via Wouter, a lightweight React router. The application has three main routes:
-- Landing page (`/`) - Public-facing hero and character showcase
-- Studio (`/studio`) - Live conversation interface for episodes
-- Control Panel (`/control`) - Administrative interface for episode management and character configuration
-
-**UI Component Library**: Radix UI primitives with shadcn/ui styling system, providing accessible, unstyled components that are customized with Tailwind CSS. The design system uses the "new-york" style variant with dark mode as the default.
-
-**State Management**: TanStack Query (React Query) for server state management with optimistic updates and caching. No global client state management library is used; component-level state with hooks is sufficient.
-
-**Styling**: Tailwind CSS with custom design tokens following a dark cosmic-spiritual aesthetic. Custom CSS variables define the color system with support for glassmorphism effects, elevation layers, and glow effects for character auras.
-
-### Backend Architecture
-
-**Framework**: Express.js server with TypeScript, following a RESTful API architecture.
-
-**API Design Pattern**: Resource-based endpoints with clear separation of concerns:
-- `/api/characters` - Character CRUD and activation status
-- `/api/episodes` - Episode management and conversation turns
-- `/api/conversation` - AI conversation routing and generation
-- `/api/knowledge` - Knowledge base querying for book/Bible passages
-
-**Conversation Orchestration**: 
-- Zero AI acts as the showrunner, using Gemini to route conversations and select the next speaker
-- Individual AI characters use their configured LLM providers (OpenAI, OpenRouter, or Gemini)
-- Disfluency processing adds natural speech patterns based on character configuration
-- Knowledge base integration provides relevant context from David's book and the Bible
-
-**LLM Integration Strategy**: Multi-provider architecture supporting:
-- **Google Gemini** via Replit AI Integrations (primary for Zero and some characters)
-- **OpenAI** via Replit AI Integrations (GPT models)
-- **OpenRouter** via Replit AI Integrations (access to Grok, Llama, and other models)
-
-Each character has configurable temperature, model, and personality traits stored in the database.
+### Backend
+- **Framework**: Express.js with TypeScript (RESTful API).
+- **API Endpoints**: `/api/characters`, `/api/episodes`, `/api/conversation`, `/api/knowledge`.
+- **Conversation Orchestration**: Zero AI (Gemini) routes conversations and selects speakers. Individual AI characters use configured LLMs (OpenAI, OpenRouter, Gemini). Includes disfluency processing and knowledge base integration.
+- **LLM Integration**: Multi-provider architecture supporting Google Gemini, OpenAI, and OpenRouter. Character configurations (temperature, model, personality) are database-driven.
 
 ### Data Storage
+- **Database**: PostgreSQL (Neon serverless) with WebSocket connections.
+- **ORM**: Drizzle ORM.
+- **Schema**:
+    - `episodes`: Metadata, participants, status.
+    - `turns`: Conversation messages (AI, host, caller).
+    - `characters`: AI personality configurations.
+    - `knowledgeBase`: Searchable book passages and Bible verses.
+    - `preshowPrep`: Pre-episode data generated by Zero.
+- **Migrations**: Drizzle Kit.
 
-**Database**: PostgreSQL via Neon serverless with WebSocket connections for edge compatibility.
+### System Design
+- **UI/UX**: Premium streaming aesthetic inspired by Netflix/Spotify, combined with a cosmic-spiritual design language, dark mode by default.
+- **Technical Implementations**: Emphasis on performance (Vite), accessibility (Radix UI), and type-safety (TypeScript, Drizzle ORM).
+- **Feature Specifications**:
+    - Real-time conversation display.
+    - Active participant polling.
+    - Episode management and character configuration.
+    - Knowledge base integration for contextual information during conversations.
+    - Dynamic pre-show prep generation for episodes.
 
-**ORM**: Drizzle ORM for type-safe database queries and schema management.
+## External Dependencies
 
-**Schema Design**:
-- `episodes` - Episode metadata with participants array and status tracking
-- `turns` - Individual conversation messages linked to episodes, supporting AI, host, and caller types
-- `characters` - AI personality configurations including LLM settings, voice parameters, and visual properties
-- `knowledgeBase` - Searchable repository of book passages and Bible verses with source tracking
-- `preshowPrep` - Pre-episode preparation data generated by Zero
-
-**Migration Strategy**: Schema changes managed through Drizzle Kit with migrations stored in `/migrations` directory.
-
-### External Dependencies
-
-**AI Services** (via Replit AI Integrations):
-- **Gemini AI** - Primary LLM for Zero (conversation routing) and select characters. Accessed through environment variables `AI_INTEGRATIONS_GEMINI_API_KEY` and `AI_INTEGRATIONS_GEMINI_BASE_URL`.
-- **OpenAI** - GPT models for specific character personalities. Accessed through `AI_INTEGRATIONS_OPENAI_API_KEY` and `AI_INTEGRATIONS_OPENAI_BASE_URL`.
-- **OpenRouter** - Access to Grok-2 and other third-party models. Accessed through `AI_INTEGRATIONS_OPENROUTER_API_KEY` and `AI_INTEGRATIONS_OPENROUTER_BASE_URL`.
-
-**Database**:
-- **Neon PostgreSQL** - Serverless PostgreSQL with WebSocket support. Connection string provided via `DATABASE_URL` environment variable.
-
-**Asset Management**:
-- AI-generated character portraits stored in `/attached_assets/generated_images/`
-- Images imported as static assets and bundled by Vite
-- Avatar mapping system links character IDs to image URLs
-
-**Future Integrations** (referenced in planning documents but not yet implemented):
-- **Twilio** - Voice call system for live audience participation with AI screening
-- **Text-to-Speech** - Voice synthesis for character audio (provider TBD)
-- **Speech-to-Text** - For processing caller audio input
-
-**Design System**:
-- **Google Fonts** - Inter and Space Grotesk font families loaded via CDN
-- **Tailwind CSS** - Utility-first CSS framework with custom configuration
-- **Radix UI** - Headless component primitives for accessibility
-
-**Development Tools**:
-- **Replit Development Plugins** - Vite plugins for runtime error overlay, cartographer (code navigation), and dev banner (Replit-specific development aids)
+- **AI Services**:
+    - **Google Gemini**: Via Replit AI Integrations (`AI_INTEGRATIONS_GEMINI_API_KEY`, `AI_INTEGRATIONS_GEMINI_BASE_URL`).
+    - **OpenAI**: Via Replit AI Integrations (`AI_INTEGRATIONS_OPENAI_API_KEY`, `AI_INTEGRATIONS_OPENAI_BASE_URL`).
+    - **OpenRouter**: Via Replit AI Integrations (`AI_INTEGRATIONS_OPENROUTER_API_KEY`, `AI_INTEGRATIONS_OPENROUTER_BASE_URL`).
+- **Database**:
+    - **Neon PostgreSQL**: Serverless PostgreSQL (`DATABASE_URL`).
+- **Asset Management**:
+    - AI-generated character portraits.
+    - Static image assets.
+- **Design System**:
+    - **Google Fonts**: Inter, Space Grotesk.
+    - **Tailwind CSS**: Utility-first CSS framework.
+    - **Radix UI**: Headless component library.
