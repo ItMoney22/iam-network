@@ -12,10 +12,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, Volume2, VolumeX, Play, Pause, Loader2, Sparkles, BookOpen } from "lucide-react";
 import { Link } from "wouter";
-import { fetchCharacters, toggleCharacterActive, createEpisode, generatePreshowPrep, fetchPreshowPrep } from "@/lib/api";
+import { fetchCharacters, toggleCharacterActive, createEpisode, generatePreshowPrep, fetchPreshowPrep, fetchEpisodes } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Character, PreshowPrep } from "@shared/schema";
+import type { Character, PreshowPrep, Episode } from "@shared/schema";
 
 import zeroAvatar from "@assets/generated_images/Zero_wise_director_portrait_435ea3ff.png";
 import m7Avatar from "@assets/generated_images/M7_skeptic_portrait_1a9bec4a.png";
@@ -65,6 +65,11 @@ export default function ControlPanel() {
     queryFn: fetchCharacters,
   });
 
+  const { data: episodes = [] } = useQuery({
+    queryKey: ["/api/episodes"],
+    queryFn: fetchEpisodes,
+  });
+
   const toggleMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       toggleCharacterActive(id, isActive),
@@ -94,10 +99,10 @@ export default function ControlPanel() {
       setCurrentEpisodeId(episode.id);
       toast({
         title: "Episode Created",
-        description: "New episode started successfully",
+        description: "New episode started successfully - generate prep to continue",
       });
       setEpisodeStatus("live");
-      setTheme("");
+      // Don't clear theme - needed for prep generation
     },
     onError: (error) => {
       toast({
@@ -311,6 +316,39 @@ export default function ControlPanel() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-white">Select Existing Episode or Create New</Label>
+                  <Select
+                    value={currentEpisodeId || "new"}
+                    onValueChange={(value) => {
+                      if (value === "new") {
+                        setCurrentEpisodeId(null);
+                        setTheme("");
+                      } else {
+                        setCurrentEpisodeId(value);
+                        const episode = episodes.find(e => e.id === value);
+                        if (episode) {
+                          setTheme(episode.theme);
+                          setEpisodeStatus("live");
+                        }
+                      }
+                    }}
+                    data-testid="select-episode"
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <SelectValue placeholder="Select episode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">+ Create New Episode</SelectItem>
+                      {episodes.map((ep) => (
+                        <SelectItem key={ep.id} value={ep.id}>
+                          {ep.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <Label className="text-white">Episode Theme</Label>
                   <Input

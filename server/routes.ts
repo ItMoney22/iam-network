@@ -228,8 +228,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...prepData,
       });
 
-      // Save to database
-      const prep = await storage.createPreshowPrep(validatedData);
+      // Upsert to database (replace existing prep if present)
+      const prep = await storage.upsertPreshowPrep(validatedData);
 
       res.json(prep);
     } catch (error) {

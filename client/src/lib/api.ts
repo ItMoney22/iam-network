@@ -27,6 +27,12 @@ export async function fetchEpisodes(): Promise<Episode[]> {
   return await response.json();
 }
 
+export async function fetchEpisode(id: string): Promise<Episode> {
+  const response = await fetch(`/api/episodes/${id}`);
+  if (!response.ok) throw new Error("Failed to fetch episode");
+  return await response.json();
+}
+
 export async function createEpisode(data: {
   title: string;
   theme: string;

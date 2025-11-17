@@ -31,6 +31,7 @@ export interface IStorage {
 
   // Preshow Prep
   createPreshowPrep(prep: InsertPreshowPrep): Promise<PreshowPrep>;
+  upsertPreshowPrep(prep: InsertPreshowPrep): Promise<PreshowPrep>;
   getPreshowPrepByEpisode(episodeId: string): Promise<PreshowPrep | undefined>;
 
   // Knowledge Base
@@ -110,6 +111,20 @@ export class DatabaseStorage implements IStorage {
 
   // Preshow Prep
   async createPreshowPrep(insertPrep: InsertPreshowPrep): Promise<PreshowPrep> {
+    const [prep] = await db
+      .insert(preshowPrep)
+      .values(insertPrep)
+      .returning();
+    return prep;
+  }
+
+  async upsertPreshowPrep(insertPrep: InsertPreshowPrep): Promise<PreshowPrep> {
+    // Delete existing prep for this episode
+    await db
+      .delete(preshowPrep)
+      .where(eq(preshowPrep.episodeId, insertPrep.episodeId!));
+    
+    // Insert new prep
     const [prep] = await db
       .insert(preshowPrep)
       .values(insertPrep)
