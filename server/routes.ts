@@ -10,6 +10,7 @@ import { generatePreshowPrep } from "./preshow/generator";
 import { registerSystemRoutes } from "./routes/system";
 import { registerClipsRoutes } from "./routes/clips";
 import { registerZeroRoutes } from "../backend/routes/zero";
+import { registerImageRoutes } from "../backend/routes/images";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize data on startup
@@ -23,6 +24,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register Zero AI routes (voice + chat)
   registerZeroRoutes(app);
+
+  // Register image generation routes (Replicate)
+  registerImageRoutes(app);
 
   // GET /api/characters - Get all characters
   app.get("/api/characters", async (req, res) => {
