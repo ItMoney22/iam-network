@@ -60,7 +60,7 @@ export default function Landing() {
               The I AM Network
             </h1>
             <p className="text-2xl lg:text-3xl text-muted-foreground font-light" data-testid="text-hero-tagline">
-              Where Humans & AI Remember They Are One
+              Conversations That Change Consciousness
             </p>
           </div>
 
