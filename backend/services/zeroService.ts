@@ -3,7 +3,7 @@
  * Handles communication with Zero (OpenAI) including voice, dev mode, and standard chat
  */
 
-import OpenAI from 'openai';
+import OpenAI, { toFile } from 'openai';
 import Replicate from 'replicate';
 import { zeroKB } from './zeroKnowledgeBase';
 
@@ -142,8 +142,8 @@ class ZeroService {
    */
   async speechToText(audioBuffer: Buffer): Promise<string> {
     try {
-      // Create a File object from buffer
-      const file = new File([audioBuffer], 'audio.webm', { type: 'audio/webm' });
+      // Convert Buffer to File-like object for OpenAI SDK
+      const file = await toFile(audioBuffer, 'audio.webm', { type: 'audio/webm' });
 
       const transcription = await openai.audio.transcriptions.create({
         file: file,
