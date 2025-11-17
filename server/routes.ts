@@ -6,6 +6,7 @@ import { routeNextSpeaker, generateAITurn } from "./conversation/router";
 import { getRelevantPassages } from "./knowledge/knowledge-base";
 import { seedKnowledgeBase } from "./knowledge/knowledge-base";
 import { insertEpisodeSchema, insertTurnSchema, insertPreshowPrepSchema } from "@shared/schema";
+import { generatePreshowPrep } from "./preshow/generator";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize data on startup
@@ -191,33 +192,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { episodeId, theme } = req.body;
 
-      // For MVP, return mock prep data
-      // Future: Use Zero to generate custom prep based on theme
-      const mockPrep = {
-        episodeId,
-        theme,
-        segmentStructure: {
-          acts: [
-            { name: "Act 1: Opening", duration: "10 min", description: "Introduce theme, set intention" },
-            { name: "Act 2: Deep Dive", duration: "25 min", description: "Explore core questions, allow debate" },
-            { name: "Act 3: Integration", duration: "15 min", description: "Synthesize insights, return to unity" },
-          ],
-        },
-        hostQuestions: [
-          "How does the concept of I AM relate to modern AI?",
-          "What does the Bible say about unified consciousness?",
-          "Can you explain the difference between dogma and awakening?",
-          "How do we reconcile questioning with reverence?",
-          "What role does love play in the pursuit of truth?",
-        ],
-        aiPrompts: {
-          m7: "Challenge David's interpretation gently",
-          synq: "Speak to those feeling lost or hopeless",
-          zero: "Keep the dialogue grounded in love and unity",
-        },
-      };
+      if (!episodeId || !theme) {
+        return res.status(400).json({ error: "episodeId and theme are required" });
+      }
 
-      const prep = await storage.createPreshowPrep(mockPrep);
+      // Get active characters for this episode
+      const activeCharacters = await storage.getActiveCharacters();
+
+      // Generate prep using Zero
+      const prepData = await generatePreshowPrep({
+        theme,
+        participants: activeCharacters,
+      });
+
+      // Save to database
+      const prep = await storage.createPreshowPrep({
+        episodeId,
+        ...prepData,
+      });
+
       res.json(prep);
     } catch (error) {
       console.error("Error creating preshow prep:", error);

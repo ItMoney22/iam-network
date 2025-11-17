@@ -63,7 +63,7 @@ export const preshowPrep = pgTable("preshow_prep", {
   episodeId: varchar("episode_id").references(() => episodes.id, { onDelete: "cascade" }),
   theme: text("theme").notNull(),
   segmentStructure: jsonb("segment_structure").notNull(), // Acts/segments
-  hostQuestions: text("host_questions").array().notNull(),
+  hostQuestions: jsonb("host_questions").notNull(), // Array of question objects with context and sources
   aiPrompts: jsonb("ai_prompts").notNull(), // Character-specific prompts
   generatedAt: timestamp("generated_at").notNull().defaultNow(),
 });
@@ -111,6 +111,13 @@ export const insertKnowledgeBaseSchema = createInsertSchema(knowledgeBase).omit(
 export const insertPreshowPrepSchema = createInsertSchema(preshowPrep).omit({
   id: true,
   generatedAt: true,
+}).extend({
+  hostQuestions: z.array(z.object({
+    question: z.string(),
+    context: z.string(),
+    source: z.enum(["book", "bible"]),
+    passage: z.string(),
+  })),
 });
 
 // Types
