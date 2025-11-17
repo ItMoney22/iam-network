@@ -157,7 +157,10 @@ export default function ControlPanel() {
   };
 
   const handleGeneratePrep = () => {
+    console.log("[handleGeneratePrep] Called with:", { theme, currentEpisodeId, isPending: generatePrepMutation.isPending });
+    
     if (!theme.trim()) {
+      console.log("[handleGeneratePrep] Theme validation failed");
       toast({
         title: "Theme Required",
         description: "Please enter an episode theme first",
@@ -167,6 +170,7 @@ export default function ControlPanel() {
     }
 
     if (!currentEpisodeId) {
+      console.log("[handleGeneratePrep] Episode ID validation failed");
       toast({
         title: "Episode Required",
         description: "Please create an episode first",
@@ -175,6 +179,7 @@ export default function ControlPanel() {
       return;
     }
 
+    console.log("[handleGeneratePrep] Calling mutation with:", { episodeId: currentEpisodeId, theme });
     generatePrepMutation.mutate({
       episodeId: currentEpisodeId,
       theme: theme,

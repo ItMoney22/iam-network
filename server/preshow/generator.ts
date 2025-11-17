@@ -139,7 +139,7 @@ Be specific, thoughtful, and grounded in the actual teachings of Yeshua and the 
 
   try {
     const result = await ai.models.generateContent({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.5-flash",
       contents: [
         {
           role: "user",
@@ -191,9 +191,14 @@ Be specific, thoughtful, and grounded in the actual teachings of Yeshua and the 
       },
     });
 
+    console.log("[generatePreshowPrep] Gemini result object:", JSON.stringify(result, null, 2));
+    console.log("[generatePreshowPrep] Has response?", !!result.response);
+    
     const generatedText = await result.response?.text();
+    console.log("[generatePreshowPrep] Generated text length:", generatedText?.length);
 
     if (!generatedText) {
+      console.error("[generatePreshowPrep] No generated text from Gemini. Result:", result);
       throw new Error("No response from Gemini");
     }
 

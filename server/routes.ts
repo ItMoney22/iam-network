@@ -234,7 +234,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(prep);
     } catch (error) {
       console.error("Error creating preshow prep:", error);
-      res.status(500).json({ error: "Failed to create prep sheet" });
+      console.error("Error details:", error instanceof Error ? error.message : String(error));
+      console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      res.status(500).json({ 
+        error: "Failed to create prep sheet",
+        details: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
