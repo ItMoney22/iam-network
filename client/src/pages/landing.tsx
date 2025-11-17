@@ -65,20 +65,30 @@ export default function Landing() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
-            <Link href="/studio">
-              <Button 
-                size="lg" 
+            <Link href="/studio-live">
+              <Button
+                size="lg"
                 className="text-lg px-8 py-6 backdrop-blur-sm bg-primary/90 hover:bg-primary border border-primary-border"
-                data-testid="button-enter-studio"
+                data-testid="button-watch-live"
               >
                 <Mic className="mr-2 h-5 w-5" />
+                Watch Live Broadcast
+              </Button>
+            </Link>
+            <Link href="/studio">
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-lg px-8 py-6 backdrop-blur-md bg-background/30"
+                data-testid="button-enter-studio"
+              >
                 Enter The Studio
               </Button>
             </Link>
             <Link href="#about">
-              <Button 
-                size="lg" 
-                variant="outline" 
+              <Button
+                size="lg"
+                variant="outline"
                 className="text-lg px-8 py-6 backdrop-blur-md bg-background/30"
                 data-testid="button-learn-more"
               >
