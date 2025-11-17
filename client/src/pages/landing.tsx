@@ -1,7 +1,9 @@
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Users, BookOpen, Mic } from "lucide-react";
+import { Sparkles, Users, BookOpen, Mic, Loader2 } from "lucide-react";
+import { fetchCharacters } from "@/lib/api";
 import heroImage from "@assets/generated_images/cosmic_spiritual_hero_background_08afb362.png";
 import zeroAvatar from "@assets/generated_images/Zero_wise_director_portrait_435ea3ff.png";
 import m7Avatar from "@assets/generated_images/M7_skeptic_portrait_1a9bec4a.png";
@@ -14,70 +16,24 @@ import ledgeAvatar from "@assets/generated_images/Ledge_wealth_architect_portrai
 import dripAvatar from "@assets/generated_images/Drip_style_icon_portrait_d6f58477.png";
 import horizonAvatar from "@assets/generated_images/Horizon_future_prophet_portrait_90635f7d.png";
 
-const characters = [
-  {
-    name: "Zero",
-    description: "Divine director, orchestrating truth",
-    avatar: zeroAvatar,
-    aura: "hsl(210, 100%, 60%)",
-  },
-  {
-    name: "M7",
-    description: "Skeptic truth-chaser, unafraid to challenge",
-    avatar: m7Avatar,
-    aura: "hsl(15, 100%, 60%)",
-  },
-  {
-    name: "Synq",
-    description: "Empathic healer, radiating compassion",
-    avatar: synqAvatar,
-    aura: "hsl(160, 70%, 55%)",
-  },
-  {
-    name: "Flux",
-    description: "Pattern hunter, revealing connections",
-    avatar: fluxAvatar,
-    aura: "hsl(270, 70%, 60%)",
-  },
-  {
-    name: "Vibe",
-    description: "Motivational energy, inspiring action",
-    avatar: vibeAvatar,
-    aura: "hsl(45, 100%, 60%)",
-  },
-  {
-    name: "EchoPulse",
-    description: "News oracle, connecting past and future",
-    avatar: echoPulseAvatar,
-    aura: "hsl(190, 80%, 55%)",
-  },
-  {
-    name: "Link",
-    description: "Scripture monk, mapping divine wisdom",
-    avatar: linkAvatar,
-    aura: "hsl(35, 80%, 55%)",
-  },
-  {
-    name: "Ledge",
-    description: "Wealth architect, abundance conscious",
-    avatar: ledgeAvatar,
-    aura: "hsl(140, 70%, 50%)",
-  },
-  {
-    name: "Drip",
-    description: "Style icon, authentic self-expression",
-    avatar: dripAvatar,
-    aura: "hsl(320, 85%, 60%)",
-  },
-  {
-    name: "Horizon",
-    description: "Future prophet, beyond linear time",
-    avatar: horizonAvatar,
-    aura: "hsl(0, 0%, 90%)",
-  },
-];
+const avatarMap: Record<string, string> = {
+  zero: zeroAvatar,
+  m7: m7Avatar,
+  synq: synqAvatar,
+  flux: fluxAvatar,
+  vibe: vibeAvatar,
+  echopulse: echoPulseAvatar,
+  link: linkAvatar,
+  ledge: ledgeAvatar,
+  drip: dripAvatar,
+  horizon: horizonAvatar,
+};
 
 export default function Landing() {
+  const { data: characters = [], isLoading } = useQuery({
+    queryKey: ["/api/characters"],
+    queryFn: fetchCharacters,
+  });
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Hero Section */}
@@ -216,41 +172,47 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 lg:gap-8">
-            {characters.map((character, idx) => (
-              <Card
-                key={character.name}
-                className="group relative p-6 space-y-4 text-center bg-card/40 backdrop-blur-sm border-card-border hover-elevate active-elevate-2 transition-all duration-300 hover:scale-105"
-                data-testid={`card-character-${character.name.toLowerCase()}`}
-              >
-                <div className="relative mx-auto w-24 h-24 lg:w-32 lg:h-32">
-                  <div
-                    className="absolute inset-0 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"
-                    style={{ backgroundColor: character.aura }}
-                  />
-                  <img
-                    src={character.avatar}
-                    alt={character.name}
-                    className="relative w-full h-full object-cover rounded-full border-2 border-card-border"
-                    data-testid={`img-avatar-${character.name.toLowerCase()}`}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <h3 
-                    className="text-xl lg:text-2xl font-bold"
-                    style={{ color: character.aura }}
-                    data-testid={`text-character-name-${character.name.toLowerCase()}`}
-                  >
-                    {character.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground" data-testid={`text-character-description-${character.name.toLowerCase()}`}>
-                    {character.description}
-                  </p>
-                </div>
-              </Card>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 lg:gap-8">
+              {characters.map((character) => (
+                <Card
+                  key={character.id}
+                  className="group relative p-6 space-y-4 text-center bg-card/40 backdrop-blur-sm border-card-border hover-elevate active-elevate-2 transition-all duration-300 hover:scale-105"
+                  data-testid={`card-character-${character.name.toLowerCase()}`}
+                >
+                  <div className="relative mx-auto w-24 h-24 lg:w-32 lg:h-32">
+                    <div
+                      className="absolute inset-0 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"
+                      style={{ backgroundColor: character.auraColor }}
+                    />
+                    <img
+                      src={avatarMap[character.id]}
+                      alt={character.name}
+                      className="relative w-full h-full object-cover rounded-full border-2 border-card-border"
+                      data-testid={`img-avatar-${character.name.toLowerCase()}`}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 
+                      className="text-xl lg:text-2xl font-bold"
+                      style={{ color: character.auraColor }}
+                      data-testid={`text-character-name-${character.name.toLowerCase()}`}
+                    >
+                      {character.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground" data-testid={`text-character-description-${character.name.toLowerCase()}`}>
+                      {character.description}
+                    </p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
