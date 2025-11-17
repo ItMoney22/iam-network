@@ -1,12 +1,23 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Settings, ChevronLeft, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Settings, ChevronLeft, Loader2, Send, Sparkles } from "lucide-react";
 import { Link } from "wouter";
-import { fetchActiveCharacters, fetchEpisodes } from "@/lib/api";
+import { 
+  fetchActiveCharacters, 
+  fetchEpisodes, 
+  fetchEpisodeTurns,
+  addConversationTurn,
+  routeNextSpeaker,
+  generateAIResponse
+} from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { Turn } from "@shared/schema";
 
 import zeroAvatar from "@assets/generated_images/Zero_wise_director_portrait_435ea3ff.png";
 import m7Avatar from "@assets/generated_images/M7_skeptic_portrait_1a9bec4a.png";
@@ -33,11 +44,16 @@ const avatarMap: Record<string, string> = {
 };
 
 export default function Studio() {
-  const [activeSpeaker, setActiveSpeaker] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [routerReasoning, setRouterReasoning] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const { data: activeCharacters = [], isLoading: loadingCharacters } = useQuery({
     queryKey: ["/api/characters/active"],
     queryFn: fetchActiveCharacters,
+    refetchInterval: 5000, // Poll every 5 seconds for participant changes
   });
 
   const { data: episodes = [], isLoading: loadingEpisodes } = useQuery({
@@ -45,10 +61,128 @@ export default function Studio() {
     queryFn: fetchEpisodes,
   });
 
+  const currentEpisode = episodes[0];
+
+  const { data: turns = [], isLoading: loadingTurns } = useQuery({
+    queryKey: ["/api/episodes", currentEpisode?.id, "turns"],
+    queryFn: () => currentEpisode ? fetchEpisodeTurns(currentEpisode.id) : Promise.resolve([]),
+    enabled: !!currentEpisode,
+    refetchInterval: 3000, // Poll every 3 seconds for new messages
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: (text: string) => {
+      if (!currentEpisode) {
+        throw new Error("No active episode");
+      }
+      return addConversationTurn({
+        episodeId: currentEpisode.id,
+        speaker: "david",
+        text,
+        type: "host",
+      });
+    },
+    onSuccess: () => {
+      if (currentEpisode) {
+        queryClient.invalidateQueries({ queryKey: ["/api/episodes", currentEpisode.id, "turns"] });
+      }
+      setMessage("");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const generateNextAITurn = async () => {
+    if (!currentEpisode || isGenerating) return;
+    
+    setIsGenerating(true);
+    setRouterReasoning(null);
+    try {
+      // First, route to next speaker
+      const decision = await routeNextSpeaker({
+        episodeId: currentEpisode.id,
+        theme: currentEpisode.theme,
+        debateHeat: 50,
+      });
+
+      // Show router reasoning
+      const speakerName = decision.nextSpeaker === "david" 
+        ? "David" 
+        : activeCharacters.find(c => c.id === decision.nextSpeaker)?.name || decision.nextSpeaker;
+      
+      setRouterReasoning(`Zero selected ${speakerName} to ${decision.intent}: ${decision.reasoning}`);
+
+      // Then generate their response
+      await generateAIResponse({
+        characterId: decision.nextSpeaker,
+        episodeId: currentEpisode.id,
+        routerIntent: decision.intent,
+      });
+
+      // Refresh turns
+      queryClient.invalidateQueries({ queryKey: ["/api/episodes", currentEpisode.id, "turns"] });
+      
+      toast({
+        title: "AI Response Generated",
+        description: `${speakerName} has responded`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate AI response",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSendMessage = () => {
+    if (!message.trim()) return;
+    if (!currentEpisode) {
+      toast({
+        title: "No Active Episode",
+        description: "Please create an episode first",
+        variant: "destructive",
+      });
+      return;
+    }
+    sendMessageMutation.mutate(message);
+  };
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [turns.length]); // Only scroll when message count changes
+
   if (loadingCharacters || loadingEpisodes) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black via-indigo-950 to-purple-950">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!currentEpisode) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="p-8 text-center max-w-md">
+          <h2 className="text-2xl font-bold mb-4">No Active Episode</h2>
+          <p className="text-muted-foreground mb-6">
+            Create an episode from the Control Panel to start a conversation.
+          </p>
+          <Link href="/control-panel">
+            <Button>
+              <Settings className="mr-2 h-4 w-4" />
+              Go to Control Panel
+            </Button>
+          </Link>
+        </Card>
       </div>
     );
   }
@@ -66,7 +200,7 @@ export default function Studio() {
             </Link>
             <div>
               <h1 className="text-xl font-bold" data-testid="text-studio-title">The Studio</h1>
-              <p className="text-sm text-muted-foreground" data-testid="text-studio-status">Live Session</p>
+              <p className="text-sm text-muted-foreground" data-testid="text-episode-theme">{currentEpisode.theme}</p>
             </div>
           </div>
 
@@ -86,129 +220,197 @@ export default function Studio() {
       </header>
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* Main Stage */}
+        {/* Conversation Area */}
         <div className="flex-1 flex flex-col">
-          {/* Participants Display */}
-          <div className="p-8 bg-gradient-to-b from-background to-accent/10">
-            <div className="max-w-5xl mx-auto">
-              <div className="flex flex-wrap justify-center gap-6 lg:gap-8">
-                <div
-                  className={`relative group transition-all duration-300 ${
-                    activeSpeaker === "david" ? "scale-110" : "opacity-70 hover:opacity-100"
-                  }`}
-                  data-testid="participant-david"
-                >
-                  <div
-                    className="w-24 h-24 lg:w-32 lg:h-32 rounded-full flex items-center justify-center text-4xl font-bold text-white border-4"
-                    style={{
-                      borderColor: "hsl(280, 70%, 65%)",
-                      boxShadow: activeSpeaker === "david" ? "0 0 40px hsl(280, 70%, 65%)" : "0 0 20px hsl(280, 70%, 65%)40",
-                      backgroundColor: "hsl(280, 70%, 20%)",
-                    }}
-                  >
-                    DT
-                  </div>
-                  <p className="text-center mt-2 text-sm font-semibold text-white">David</p>
-                </div>
+          {/* Router Reasoning Display */}
+          {routerReasoning && (
+            <div className="px-6 py-3 bg-primary/10 border-b border-primary/20">
+              <div className="max-w-4xl mx-auto flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-primary" data-testid="text-router-reasoning">{routerReasoning}</p>
+              </div>
+            </div>
+          )}
 
-                {activeCharacters.map((character) => (
-                  <div
-                    key={character.id}
-                    className={`relative group transition-all duration-300 ${
-                      activeSpeaker === character.id ? "scale-110" : "opacity-70 hover:opacity-100"
-                    }`}
-                    data-testid={`participant-${character.id}`}
-                  >
+          {/* Messages */}
+          <ScrollArea className="flex-1 p-6">
+            <div className="max-w-4xl mx-auto space-y-4">
+              {loadingTurns ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : turns.length === 0 ? (
+                <div className="text-center py-12">
+                  <Sparkles className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
+                </div>
+              ) : (
+                <>
+                  {turns.map((turn) => {
+                  const isHost = turn.speaker === "david";
+                  const character = activeCharacters.find(c => c.id === turn.speaker);
+                  const displayName = isHost ? "David Trinidad" : character?.name || turn.speaker;
+                  const avatarUrl = turn.speaker !== "david" ? avatarMap[turn.speaker] : null;
+                  
+                  return (
                     <div
-                      className={`absolute inset-0 rounded-full blur-2xl transition-all duration-500 ${
-                        activeSpeaker === character.id ? "opacity-75 animate-pulse-glow" : "opacity-0"
-                      }`}
-                      style={{ backgroundColor: character.auraColor }}
-                    />
-                    
-                    <div className="relative">
-                      <img
-                        src={avatarMap[character.id]}
-                        alt={character.name}
-                        className={`w-24 h-24 lg:w-32 lg:h-32 rounded-full object-cover border-4 transition-all duration-300 ${
-                          activeSpeaker === character.id
-                            ? "border-primary shadow-lg shadow-primary/50"
-                            : "border-card-border"
-                        }`}
-                        data-testid={`avatar-${character.id}`}
-                      />
-                      
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                        <Badge
-                          variant={activeSpeaker === character.id ? "default" : "outline"}
-                          className="text-xs"
-                          data-testid={`name-${character.id}`}
+                      key={turn.id}
+                      className={`flex gap-4 ${isHost ? "flex-row-reverse" : "flex-row"}`}
+                      data-testid={`message-${turn.id}`}
+                    >
+                      {/* Avatar */}
+                      <div className="flex-shrink-0">
+                        {avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt={displayName}
+                            className="w-10 h-10 rounded-full object-cover border-2"
+                            style={{
+                              borderColor: character?.auraColor || "hsl(var(--primary))",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2"
+                            style={{
+                              borderColor: "hsl(280, 70%, 65%)",
+                              backgroundColor: "hsl(280, 70%, 20%)",
+                            }}
+                          >
+                            DT
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Message Bubble */}
+                      <div className={`flex-1 max-w-2xl ${isHost ? "text-right" : "text-left"}`}>
+                        <div className="flex items-baseline gap-2 mb-1">
+                          <span className={`text-sm font-semibold ${isHost ? "order-2" : "order-1"}`}>
+                            {displayName}
+                          </span>
+                          <span className={`text-xs text-muted-foreground ${isHost ? "order-1" : "order-2"}`}>
+                            {new Date(turn.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <div
+                          className={`inline-block px-4 py-3 rounded-lg ${
+                            isHost
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-card border border-border"
+                          }`}
                         >
-                          {character.name}
-                        </Badge>
+                          <p className="whitespace-pre-wrap">{turn.text}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                  })}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Input Area */}
+          <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
+            <div className="max-w-4xl mx-auto space-y-3">
+              {/* AI Generate Button */}
+              <div className="flex justify-center">
+                <Button
+                  onClick={generateNextAITurn}
+                  disabled={isGenerating}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  data-testid="button-generate-ai"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Generate Next AI Response
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* David's Input */}
+              <div className="flex gap-2">
+                <Textarea
+                  placeholder="Enter your message as David..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  className="resize-none"
+                  rows={2}
+                  data-testid="input-message"
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!message.trim() || sendMessageMutation.isPending}
+                  size="icon"
+                  className="h-full"
+                  data-testid="button-send"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
               </div>
             </div>
-          </div>
-
-          {/* Live Captions */}
-          <div className="p-6 bg-card/50 border-t border-border">
-            <div className="max-w-4xl mx-auto">
-              <p className="text-lg text-center leading-relaxed text-muted-foreground" data-testid="text-live-caption">
-                {episodes.length > 0 
-                  ? `Episode: ${episodes[0].title}` 
-                  : "No active episode - Start one from the Host Control Panel"}
-              </p>
-            </div>
-          </div>
-
-          {/* Conversation History */}
-          <div className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full p-6">
-              <div className="max-w-4xl mx-auto space-y-6">
-                {episodes.length === 0 ? (
-                  <Card className="p-8 bg-card/40 backdrop-blur-sm border-card-border text-center">
-                    <p className="text-muted-foreground">
-                      No conversation turns yet. Create an episode from the Host Control Panel to begin.
-                    </p>
-                  </Card>
-                ) : (
-                  <Card className="p-8 bg-card/40 backdrop-blur-sm border-card-border text-center">
-                    <p className="text-muted-foreground">
-                      Conversation turns will appear here when the episode is live.
-                    </p>
-                  </Card>
-                )}
-              </div>
-            </ScrollArea>
           </div>
         </div>
 
-        {/* Side Panel - Chat/Debug Console (optional, hidden on mobile) */}
-        <div className="hidden lg:block w-80 border-l border-border bg-card/30">
-          <div className="p-4 border-b border-border">
-            <h3 className="font-semibold" data-testid="text-debug-title">Debug Console</h3>
-            <p className="text-xs text-muted-foreground">Development Mode</p>
-          </div>
-          <ScrollArea className="h-[calc(100vh-8rem)]">
-            <div className="p-4 space-y-2 text-xs font-mono">
-              <div className="text-muted-foreground" data-testid="debug-log-1">
-                [INFO] Episode started: Theme - Divine Consciousness
+        {/* Participants Sidebar */}
+        <div className="lg:w-80 border-l border-border bg-card/30 p-6">
+          <h3 className="text-lg font-semibold mb-4">Active Participants</h3>
+          <div className="space-y-4">
+            {/* David */}
+            <div className="flex items-center gap-3" data-testid="participant-david">
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold border-2"
+                style={{
+                  borderColor: "hsl(280, 70%, 65%)",
+                  backgroundColor: "hsl(280, 70%, 20%)",
+                }}
+              >
+                DT
               </div>
-              <div className="text-muted-foreground" data-testid="debug-log-2">
-                [INFO] Active participants: 5
-              </div>
-              <div className="text-primary" data-testid="debug-log-3">
-                [ROUTER] Zero selected as next speaker
-              </div>
-              <div className="text-muted-foreground" data-testid="debug-log-4">
-                [LLM] Model: gpt-4.1 | Temperature: 0.6
+              <div>
+                <p className="font-semibold">David Trinidad</p>
+                <p className="text-xs text-muted-foreground">Host</p>
               </div>
             </div>
-          </ScrollArea>
+
+            {/* AI Participants */}
+            {activeCharacters.map((character) => (
+              <div
+                key={character.id}
+                className="flex items-center gap-3"
+                data-testid={`participant-${character.id}`}
+              >
+                <img
+                  src={avatarMap[character.id]}
+                  alt={character.name}
+                  className="w-12 h-12 rounded-full object-cover border-2"
+                  style={{
+                    borderColor: character.auraColor,
+                  }}
+                />
+                <div>
+                  <p className="font-semibold">{character.name}</p>
+                  <p className="text-xs text-muted-foreground">{character.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

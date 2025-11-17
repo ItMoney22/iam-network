@@ -16,14 +16,15 @@ export async function fetchActiveCharacters(): Promise<Character[]> {
 }
 
 export async function toggleCharacterActive(id: string, isActive: boolean): Promise<Character> {
-  return apiRequest("PATCH", `/api/characters/${id}/active`, { isActive });
+  const response = await apiRequest("PATCH", `/api/characters/${id}/active`, { isActive });
+  return await response.json();
 }
 
 // Episodes API
 export async function fetchEpisodes(): Promise<Episode[]> {
   const response = await fetch("/api/episodes");
   if (!response.ok) throw new Error("Failed to fetch episodes");
-  return response.json();
+  return await response.json();
 }
 
 export async function createEpisode(data: {
@@ -31,13 +32,14 @@ export async function createEpisode(data: {
   theme: string;
   participants: string[];
 }): Promise<Episode> {
-  return apiRequest("POST", "/api/episodes", data);
+  const response = await apiRequest("POST", "/api/episodes", data);
+  return await response.json();
 }
 
 export async function fetchEpisodeTurns(episodeId: string): Promise<Turn[]> {
   const response = await fetch(`/api/episodes/${episodeId}/turns`);
   if (!response.ok) throw new Error("Failed to fetch turns");
-  return response.json();
+  return await response.json();
 }
 
 // Conversation API
@@ -46,7 +48,8 @@ export async function routeNextSpeaker(data: {
   theme: string;
   debateHeat?: number;
 }): Promise<{ nextSpeaker: string; intent: string; reasoning: string }> {
-  return apiRequest("POST", "/api/conversation/next", data);
+  const response = await apiRequest("POST", "/api/conversation/next", data);
+  return await response.json();
 }
 
 export async function generateAIResponse(data: {
@@ -55,7 +58,8 @@ export async function generateAIResponse(data: {
   routerIntent: string;
   query?: string;
 }): Promise<Turn> {
-  return apiRequest("POST", "/api/conversation/generate", data);
+  const response = await apiRequest("POST", "/api/conversation/generate", data);
+  return await response.json();
 }
 
 export async function addConversationTurn(data: {
@@ -64,7 +68,8 @@ export async function addConversationTurn(data: {
   text: string;
   type: string;
 }): Promise<Turn> {
-  return apiRequest("POST", "/api/conversation/turn", data);
+  const response = await apiRequest("POST", "/api/conversation/turn", data);
+  return await response.json();
 }
 
 // Preshow API
