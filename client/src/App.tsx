@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Landing from "@/pages/landing";
 import Studio from "@/pages/studio";
 import ControlPanel from "@/pages/control-panel";
+import ZeroChatPage from "@/pages/zero-chat";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/studio" component={Studio} />
       <Route path="/control" component={ControlPanel} />
+      <Route path="/zero" component={ZeroChatPage} />
       <Route component={NotFound} />
     </Switch>
   );

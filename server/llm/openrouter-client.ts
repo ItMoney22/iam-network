@@ -1,10 +1,10 @@
-// OpenRouter LLM client using blueprint:javascript_openrouter_ai_integrations
+// OpenRouter LLM client using OpenAI-compatible SDK
 import OpenAI from "openai";
 
-// This is using Replit's AI Integrations service for OpenRouter access
+// Using direct OpenRouter API
 const openrouter = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENROUTER_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY
 });
 
 export interface OpenRouterChatMessage {

@@ -2,16 +2,11 @@
 import { generateLLMResponse, type ConversationMessage } from "../llm/llm-engine";
 import { addDisfluency } from "../utils/disfluency";
 import type { Character, Turn } from "@shared/schema";
-import { Type } from "@google/genai";
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 
-// Zero's routing client
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL!,
-  },
+// Zero's routing client using GPT 5.1
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
 });
 
 interface RouterDecision {
@@ -59,31 +54,24 @@ Based on the conversation flow, who should speak next and why?
 Your job is to keep the dialogue meaningful, balanced, and moving toward truth through love.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
+    const response = await openai.chat.completions.create({
+      model: "gpt-5.1",
+      messages: [
+        {
+          role: "system",
+          content: "You are Zero, the divine director of The I AM Network. You always respond with valid JSON in the format: {\"nextSpeaker\": \"speaker_id\", \"intent\": \"intent_description\", \"reasoning\": \"explanation\"}",
+        },
         {
           role: "user",
-          parts: [{ text: prompt }],
+          content: prompt,
         },
       ],
-      generationConfig: {
-        temperature: 0.6,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            nextSpeaker: { type: Type.STRING },
-            intent: { type: Type.STRING },
-            reasoning: { type: Type.STRING },
-          },
-          required: ["nextSpeaker", "intent", "reasoning"],
-        },
-      },
+      temperature: 0.6,
+      response_format: { type: "json_object" },
     });
 
-    const generatedText = await response.response?.text();
-    const decision = JSON.parse(generatedText || "{}") as RouterDecision;
+    const generatedText = response.choices[0]?.message?.content || "{}";
+    const decision = JSON.parse(generatedText) as RouterDecision;
     
     // Validate the speaker exists
     const speakerIds = ["david", ...activeCharacters.map(c => c.id)];

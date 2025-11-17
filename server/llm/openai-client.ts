@@ -1,10 +1,9 @@
-// OpenAI LLM client using blueprint:javascript_openai_ai_integrations
+// OpenAI LLM client using official OpenAI SDK
 import OpenAI from "openai";
 
-// This is using Replit's AI Integrations service
+// Using direct OpenAI API
 const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 export interface OpenAIChatMessage {

@@ -12,6 +12,7 @@ export const episodes = pgTable("episodes", {
   date: timestamp("date").notNull().defaultNow(),
   participants: text("participants").array().notNull(), // Array of character IDs
   status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, live, completed
+  episodeStartTime: timestamp("episode_start_time"), // When episode went live (for clip timestamps)
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -135,3 +136,71 @@ export type InsertKnowledgeBase = z.infer<typeof insertKnowledgeBaseSchema>;
 
 export type PreshowPrep = typeof preshowPrep.$inferSelect;
 export type InsertPreshowPrep = z.infer<typeof insertPreshowPrepSchema>;
+
+// Zero Knowledge Base - stores David's profile and Zero's principles
+export const zeroKnowledge = pgTable("zero_knowledge", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  source: text("source").notNull(), // 'david_profile' or 'zero_principles'
+  heading: text("heading").notNull(),
+  orderIndex: integer("order_index").notNull(),
+  text: text("text").notNull(),
+  embedding: jsonb("embedding"), // Vector embedding for semantic search
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// System Alerts - for health monitoring and Zero's watchdog function
+export const systemAlerts = pgTable("system_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  level: varchar("level", { length: 20 }).notNull(), // 'info', 'warning', 'error', 'critical'
+  source: text("source").notNull(), // 'backend', 'llm', 'tts', 'stt', 'db', etc.
+  message: text("message").notNull(),
+  details: jsonb("details"),
+  resolved: boolean("resolved").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Episode Clips - markers for creating shorts
+export const episodeClips = pgTable("episode_clips", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  episodeId: varchar("episode_id").notNull().references(() => episodes.id, { onDelete: "cascade" }),
+  label: text("label"),
+  timestampSeconds: integer("timestamp_seconds").notNull(), // Seconds since episode start
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Episode start time tracking (extend episodes table functionality)
+// Note: We'll add episode_start_time to episodes table via migration
+
+// Insert schemas for new tables
+export const insertZeroKnowledgeSchema = createInsertSchema(zeroKnowledge).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSystemAlertSchema = createInsertSchema(systemAlerts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEpisodeClipSchema = createInsertSchema(episodeClips).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for new tables
+export type ZeroKnowledge = typeof zeroKnowledge.$inferSelect;
+export type InsertZeroKnowledge = z.infer<typeof insertZeroKnowledgeSchema>;
+
+export type SystemAlert = typeof systemAlerts.$inferSelect;
+export type InsertSystemAlert = z.infer<typeof insertSystemAlertSchema>;
+
+export type EpisodeClip = typeof episodeClips.$inferSelect;
+export type InsertEpisodeClip = z.infer<typeof insertEpisodeClipSchema>;
+
+// Relations for new tables
+export const episodeClipsRelations = relations(episodeClips, ({ one }) => ({
+  episode: one(episodes, {
+    fields: [episodeClips.episodeId],
+    references: [episodes.id],
+  }),
+}));

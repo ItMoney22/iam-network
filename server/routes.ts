@@ -7,10 +7,22 @@ import { getRelevantPassages } from "./knowledge/knowledge-base";
 import { seedKnowledgeBase } from "./knowledge/knowledge-base";
 import { insertEpisodeSchema, insertTurnSchema, insertPreshowPrepSchema } from "@shared/schema";
 import { generatePreshowPrep } from "./preshow/generator";
+import { registerSystemRoutes } from "./routes/system";
+import { registerClipsRoutes } from "./routes/clips";
+import { registerZeroRoutes } from "../backend/routes/zero";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize data on startup
   await initializeData();
+
+  // Register system health & alerts routes
+  registerSystemRoutes(app);
+
+  // Register episode clips routes
+  registerClipsRoutes(app);
+
+  // Register Zero AI routes (voice + chat)
+  registerZeroRoutes(app);
 
   // GET /api/characters - Get all characters
   app.get("/api/characters", async (req, res) => {

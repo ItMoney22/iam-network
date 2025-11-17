@@ -1,13 +1,9 @@
-// Gemini LLM client using blueprint:javascript_gemini_ai_integrations
+// Gemini LLM client using Google Generative AI SDK
 import { GoogleGenAI } from "@google/genai";
 
-// This is using Replit's AI Integrations service
+// Using direct Google Generative AI API
 const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL!,
-  },
+  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
 });
 
 export interface GeminiChatMessage {
