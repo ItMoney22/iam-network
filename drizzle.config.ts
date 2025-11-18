@@ -7,16 +7,18 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL or DATABASE_PUBLIC_URL must be set. Ensure the database is provisioned");
 }
 
-const isProduction = process.env.NODE_ENV === 'production';
-
-// Use PostgreSQL for production, SQLite for local development
-const dialect = (isProduction || databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://')) ? 'postgresql' : 'sqlite';
+// Validate it's a PostgreSQL connection string
+if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
+  throw new Error(
+    `Invalid DATABASE_URL: must be a PostgreSQL connection string (postgresql://...)\nReceived: ${databaseUrl.substring(0, 30)}...`
+  );
+}
 
 export default defineConfig({
   out: "./migrations",
   schema: "./shared/schema.ts",
-  dialect: dialect as 'postgresql' | 'sqlite',
-  dbCredentials: dialect === 'postgresql'
-    ? { url: databaseUrl }
-    : { url: databaseUrl.replace('file:', '') },
+  dialect: 'postgresql',
+  dbCredentials: {
+    url: databaseUrl
+  },
 });
