@@ -104,7 +104,7 @@ INSERT INTO episodes (title, theme, participants, status)
 VALUES (
   'Live Episode',
   'Divine Consciousness & The I AM Within',
-  ARRAY['zero', 'm7', 'synq'],
+  ARRAY['marcus', 'elena', 'sophia'],
   'live'
 ) ON CONFLICT DO NOTHING;
 `;

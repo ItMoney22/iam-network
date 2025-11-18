@@ -2,71 +2,71 @@
 import type { LLMConfig } from "../services/llmEngine";
 
 export const CHARACTER_LLM_CONFIG: Record<string, LLMConfig> = {
-  // Zero = OpenAI main brain (GPT 5.1)
-  Zero: {
+  // Marcus Chen = OpenAI main brain (GPT 4.1) - Wise host
+  Marcus: {
     provider: 'openai',
-    model: 'gpt-5.1',
-    temperature: 0.4,
+    model: 'gpt-4.1',
+    temperature: 0.6,
   },
 
-  // M7 = Grok unhinged skeptic
-  M7: {
+  // Elena Rodriguez = Grok unhinged skeptic
+  Elena: {
     provider: 'openrouter',
     model: 'x-ai/grok-2-1212',
     temperature: 0.9,
   },
 
-  // Synq = Empathic healer (OpenAI mini for consistency)
-  Synq: {
-    provider: 'openrouter',
-    model: 'openai/gpt-4.1-mini',
-    temperature: 0.5,
+  // Sophia Williams = Empathic healer (Gemini Flash for consistency)
+  Sophia: {
+    provider: 'gemini',
+    model: 'gemini-2.5-flash',
+    temperature: 0.7,
   },
 
-  // Flux = Pattern hunter (Llama for analytical depth)
-  Flux: {
+  // James Park = Pattern hunter (Llama for analytical depth)
+  James: {
     provider: 'openrouter',
     model: 'meta-llama/llama-3.3-70b-instruct',
     temperature: 0.8,
   },
 
-  // Vibe = Motivational energy (OpenAI GPT-5)
-  Vibe: {
+  // Destiny Johnson = Motivational energy (OpenAI GPT-5)
+  Destiny: {
     provider: 'openai',
     model: 'gpt-5',
     temperature: 0.85,
   },
 
-  // EchoPulse = News oracle (Gemini Pro for current events)
-  EchoPulse: {
+  // Nathan Brooks = News oracle (Gemini Pro for current events)
+  Nathan: {
     provider: 'gemini',
     model: 'gemini-2.5-pro',
     temperature: 0.5,
   },
 
-  // Link = Scripture monk (OpenAI mini for precision)
-  Link: {
+  // Rachel Goldman = Scripture scholar (OpenAI mini for precision)
+  Rachel: {
     provider: 'openai',
     model: 'gpt-4.1-mini',
     temperature: 0.4,
   },
 
-  // Ledge = Wealth architect (Claude Sonnet for strategic thinking)
-  Ledge: {
+  // Victor Okafor = Wealth architect (Claude Sonnet for strategic thinking)
+  Victor: {
     provider: 'openrouter',
     model: 'anthropic/claude-3.5-sonnet',
     temperature: 0.7,
   },
 
-  // Drip = Style icon (OpenAI GPT-5 mini for creativity)
-  Drip: {
+  // Maya Patel = Style icon (OpenAI GPT-5 mini for creativity)
+  Maya: {
     provider: 'openai',
     model: 'gpt-5-mini',
     temperature: 0.9,
   },
 
-  // Horizon = Future prophet (Gemini Pro for vision)
-  Horizon: {
+  // Isaac Morrison = Future prophet (Gemini Pro for vision)
+  Isaac: {
     provider: 'gemini',
     model: 'gemini-2.5-pro',
     temperature: 0.75,

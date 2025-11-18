@@ -11,10 +11,15 @@ import { registerSystemRoutes } from "./routes/system";
 import { registerClipsRoutes } from "./routes/clips";
 import { registerZeroRoutes } from "../backend/routes/zero";
 import { registerImageRoutes } from "../backend/routes/images";
+import { registerBrowserSourceRoutes } from "./routes/browserSource";
+import { chatAggregator } from "./services/chatAggregator";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize data on startup
   await initializeData();
+
+  // Initialize chat aggregator
+  await chatAggregator.initialize();
 
   // Register system health & alerts routes
   registerSystemRoutes(app);
@@ -278,6 +283,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+
+  // Register browser source routes (must be after httpServer is created)
+  registerBrowserSourceRoutes(app, httpServer);
+
   return httpServer;
 }
 

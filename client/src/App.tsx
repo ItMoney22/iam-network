@@ -8,6 +8,7 @@ import Studio from "@/pages/studio";
 import StudioLive from "@/pages/studio-live";
 import ControlPanel from "@/pages/control-panel";
 import ZeroChatPage from "@/pages/zero-chat";
+import BrowserSourceChat from "@/pages/browser-source-chat";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/studio-live" component={StudioLive} />
       <Route path="/control" component={ControlPanel} />
       <Route path="/zero" component={ZeroChatPage} />
+      <Route path="/browser-source/chat" component={BrowserSourceChat} />
       <Route component={NotFound} />
     </Switch>
   );

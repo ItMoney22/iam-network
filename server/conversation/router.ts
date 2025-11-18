@@ -1,10 +1,10 @@
-// Zero-powered conversation router
+// Marcus-powered conversation router
 import { generateLLMResponse, type ConversationMessage } from "../llm/llm-engine";
 import { addDisfluency } from "../utils/disfluency";
 import type { Character, Turn } from "@shared/schema";
 import OpenAI from "openai";
 
-// Zero's routing client using GPT 5.1
+// Marcus's routing client using GPT 4.1
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
@@ -33,7 +33,7 @@ export async function routeNextSpeaker(context: RouterContext): Promise<RouterDe
 
   const activeNames = activeCharacters.map(c => `${c.name} (${c.role})`).join(", ");
 
-  const prompt = `You are Zero, the divine director of The I AM Network.
+  const prompt = `You are Marcus Chen, the seasoned host and moderator of The I AM Network.
 
 CURRENT EPISODE THEME: ${episodeTheme}
 
@@ -59,7 +59,7 @@ Your job is to keep the dialogue meaningful, balanced, and moving toward truth t
       messages: [
         {
           role: "system",
-          content: "You are Zero, the divine director of The I AM Network. You always respond with valid JSON in the format: {\"nextSpeaker\": \"speaker_id\", \"intent\": \"intent_description\", \"reasoning\": \"explanation\"}",
+          content: "You are Marcus Chen, the experienced host and moderator of The I AM Network. You always respond with valid JSON in the format: {\"nextSpeaker\": \"speaker_id\", \"intent\": \"intent_description\", \"reasoning\": \"explanation\"}",
         },
         {
           role: "user",
@@ -76,8 +76,8 @@ Your job is to keep the dialogue meaningful, balanced, and moving toward truth t
     // Validate the speaker exists
     const speakerIds = ["david", ...activeCharacters.map(c => c.id)];
     if (!speakerIds.includes(decision.nextSpeaker.toLowerCase())) {
-      // Default to Zero if invalid
-      decision.nextSpeaker = "zero";
+      // Default to Marcus if invalid
+      decision.nextSpeaker = "marcus";
     }
 
     return decision;
@@ -86,9 +86,9 @@ Your job is to keep the dialogue meaningful, balanced, and moving toward truth t
     // Fallback: alternate between characters
     const lastSpeaker = recentTurns[recentTurns.length - 1]?.speaker;
     const nextChar = activeCharacters.find(c => c.id !== lastSpeaker) || activeCharacters[0];
-    
+
     return {
-      nextSpeaker: nextChar?.id || "zero",
+      nextSpeaker: nextChar?.id || "marcus",
       intent: "continue_dialogue",
       reasoning: "Fallback routing due to error",
     };
@@ -110,7 +110,7 @@ export async function generateAITurn(
   // Add router intent as additional context
   messages.push({
     role: "user",
-    content: `[Zero's guidance: Your intent is to ${routerIntent}. Respond authentically as ${character.name}.]`,
+    content: `[Marcus's guidance: Your intent is to ${routerIntent}. Respond authentically as ${character.name}.]`,
   });
 
   // Generate response

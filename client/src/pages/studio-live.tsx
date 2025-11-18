@@ -6,28 +6,28 @@ import { Loader2 } from "lucide-react";
 import { fetchActiveCharacters, fetchEpisodes, fetchEpisodeTurns } from "@/lib/api";
 import type { Character, Turn } from "@shared/schema";
 
-import zeroAvatar from "@assets/generated_images/Zero_wise_director_portrait_435ea3ff.png";
-import m7Avatar from "@assets/generated_images/M7_skeptic_portrait_1a9bec4a.png";
-import synqAvatar from "@assets/generated_images/Synq_healer_portrait_98fc9eec.png";
-import fluxAvatar from "@assets/generated_images/Flux_conspiracy_hunter_portrait_f8ccb042.png";
-import vibeAvatar from "@assets/generated_images/Vibe_motivation_portrait_ae027adf.png";
-import echoPulseAvatar from "@assets/generated_images/EchoPulse_news_oracle_portrait_72673636.png";
-import linkAvatar from "@assets/generated_images/Link_scripture_monk_portrait_230035c2.png";
-import ledgeAvatar from "@assets/generated_images/Ledge_wealth_architect_portrait_2e555de5.png";
-import dripAvatar from "@assets/generated_images/Drip_style_icon_portrait_d6f58477.png";
-import horizonAvatar from "@assets/generated_images/Horizon_future_prophet_portrait_90635f7d.png";
+import marcusAvatar from "@assets/generated_images/Marcus_wise_director_portrait_sv5sm1qh.png";
+import elenaAvatar from "@assets/generated_images/Elena_skeptic_portrait_gafo9wcq.png";
+import sophiaAvatar from "@assets/generated_images/Sophia_healer_portrait_yse29t2p.png";
+import jamesAvatar from "@assets/generated_images/James_conspiracy_hunter_portrait_pilvs1nt.png";
+import destinyAvatar from "@assets/generated_images/Destiny_motivation_portrait_87d4qztu.png";
+import nathanAvatar from "@assets/generated_images/Nathan_news_oracle_portrait_a3z0k1xg.png";
+import rachelAvatar from "@assets/generated_images/Rachel_scripture_monk_portrait_e0w6jn7e.png";
+import victorAvatar from "@assets/generated_images/Victor_wealth_architect_portrait_fx52jxr2.png";
+import mayaAvatar from "@assets/generated_images/Maya_style_icon_portrait_mekhvuyi.png";
+import isaacAvatar from "@assets/generated_images/Isaac_future_prophet_portrait_tjnkph47.png";
 
 const avatarMap: Record<string, string> = {
-  zero: zeroAvatar,
-  m7: m7Avatar,
-  synq: synqAvatar,
-  flux: fluxAvatar,
-  vibe: vibeAvatar,
-  echopulse: echoPulseAvatar,
-  link: linkAvatar,
-  ledge: ledgeAvatar,
-  drip: dripAvatar,
-  horizon: horizonAvatar,
+  marcus: marcusAvatar,
+  elena: elenaAvatar,
+  sophia: sophiaAvatar,
+  james: jamesAvatar,
+  destiny: destinyAvatar,
+  nathan: nathanAvatar,
+  rachel: rachelAvatar,
+  victor: victorAvatar,
+  maya: mayaAvatar,
+  isaac: isaacAvatar,
 };
 
 interface ParticipantCardProps {
