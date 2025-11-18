@@ -176,7 +176,7 @@ export default function Studio() {
           <p className="text-muted-foreground mb-6">
             Create an episode from the Control Panel to start a conversation.
           </p>
-          <Link href="/control-panel">
+          <Link href="/control">
             <Button>
               <Settings className="mr-2 h-4 w-4" />
               Go to Control Panel
@@ -209,7 +209,7 @@ export default function Studio() {
               <span className="mr-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
               LIVE
             </Badge>
-            <Link href="/control-panel">
+            <Link href="/control">
               <Button variant="outline" data-testid="button-control-panel">
                 <Settings className="mr-2 h-4 w-4" />
                 Host Controls
