@@ -6,16 +6,16 @@ import { Loader2 } from "lucide-react";
 import { fetchActiveCharacters, fetchEpisodes, fetchEpisodeTurns } from "@/lib/api";
 import type { Character, Turn } from "@shared/schema";
 
-import marcusAvatar from "@assets/generated_images/Marcus_wise_director_portrait_sv5sm1qh.png";
-import elenaAvatar from "@assets/generated_images/Elena_skeptic_portrait_gafo9wcq.png";
-import sophiaAvatar from "@assets/generated_images/Sophia_healer_portrait_yse29t2p.png";
-import jamesAvatar from "@assets/generated_images/James_conspiracy_hunter_portrait_pilvs1nt.png";
-import destinyAvatar from "@assets/generated_images/Destiny_motivation_portrait_87d4qztu.png";
-import nathanAvatar from "@assets/generated_images/Nathan_news_oracle_portrait_a3z0k1xg.png";
-import rachelAvatar from "@assets/generated_images/Rachel_scripture_monk_portrait_e0w6jn7e.png";
-import victorAvatar from "@assets/generated_images/Victor_wealth_architect_portrait_fx52jxr2.png";
-import mayaAvatar from "@assets/generated_images/Maya_style_icon_portrait_mekhvuyi.png";
-import isaacAvatar from "@assets/generated_images/Isaac_future_prophet_portrait_tjnkph47.png";
+import marcusAvatar from "@/assets/generated_images/Marcus_wise_director_portrait_sv5sm1qh.png";
+import elenaAvatar from "@/assets/generated_images/Elena_skeptic_portrait_gafo9wcq.png";
+import sophiaAvatar from "@/assets/generated_images/Sophia_healer_portrait_yse29t2p.png";
+import jamesAvatar from "@/assets/generated_images/James_conspiracy_hunter_portrait_pilvs1nt.png";
+import destinyAvatar from "@/assets/generated_images/Destiny_motivation_portrait_87d4qztu.png";
+import nathanAvatar from "@/assets/generated_images/Nathan_news_oracle_portrait_a3z0k1xg.png";
+import rachelAvatar from "@/assets/generated_images/Rachel_scripture_monk_portrait_e0w6jn7e.png";
+import victorAvatar from "@/assets/generated_images/Victor_wealth_architect_portrait_fx52jxr2.png";
+import mayaAvatar from "@/assets/generated_images/Maya_style_icon_portrait_mekhvuyi.png";
+import isaacAvatar from "@/assets/generated_images/Isaac_future_prophet_portrait_tjnkph47.png";
 
 const avatarMap: Record<string, string> = {
   marcus: marcusAvatar,
