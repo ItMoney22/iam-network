@@ -1,4 +1,3 @@
-```
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Send, Lock, Brain, Sparkles, Play, Pause, Volume2 } from "lucide-react";
@@ -24,7 +23,7 @@ export default function ZeroChat() {
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-  
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -65,7 +64,7 @@ export default function ZeroChat() {
         audioUrl: data.audioUrl,
       };
       setMessages((prev) => [...prev, newMessage]);
-      
+
       // Auto-play audio
       if (data.audioUrl) {
         playAudio(data.audioUrl);
@@ -82,7 +81,7 @@ export default function ZeroChat() {
 
   const handleSend = () => {
     if (!input.trim()) return;
-    
+
     const userMsg: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMsg]);
     chatMutation.mutate(input);
@@ -122,7 +121,7 @@ export default function ZeroChat() {
 
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
-    
+
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setInput(transcript);
@@ -145,9 +144,9 @@ export default function ZeroChat() {
             <h2 className="text-2xl font-bold text-white">Zero Access</h2>
             <p className="text-gray-400">Enter your personal access code.</p>
             <div className="flex gap-2">
-              <Input 
-                type="password" 
-                value={accessCode} 
+              <Input
+                type="password"
+                value={accessCode}
                 onChange={(e) => setAccessCode(e.target.value)}
                 className="bg-white/5 border-white/10 text-white text-center tracking-widest"
                 placeholder="••••"
@@ -167,7 +166,7 @@ export default function ZeroChat() {
     <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-[url('@assets/generated_images/cosmic_spiritual_hero_background_08afb362.png')] bg-cover bg-center opacity-10 pointer-events-none" />
-      
+
       {/* Header */}
       <header className="p-4 border-b border-white/10 bg-black/50 backdrop-blur-md flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
@@ -197,20 +196,19 @@ export default function ZeroChat() {
               <p className="text-sm mt-2">Ask me to remember something or retrieve a memory.</p>
             </div>
           )}
-          
+
           {messages.map((msg, idx) => (
             <motion.div
               key={idx}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex ${ msg.role === "user" ? "justify-end" : "justify-start" } `}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} `}
             >
               <div
-                className={`max - w - [80 %] p - 4 rounded - 2xl ${
-  msg.role === "user"
-    ? "bg-blue-600/20 border border-blue-500/30 text-blue-100"
-    : "bg-white/10 border border-white/10 text-gray-100"
-} `}
+                className={`max - w - [80 %] p - 4 rounded - 2xl ${msg.role === "user"
+                  ? "bg-blue-600/20 border border-blue-500/30 text-blue-100"
+                  : "bg-white/10 border border-white/10 text-gray-100"
+                  } `}
               >
                 <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 {msg.audioUrl && (
@@ -226,7 +224,7 @@ export default function ZeroChat() {
               </div>
             </motion.div>
           ))}
-          
+
           {chatMutation.isPending && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
               <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex gap-2 items-center">
@@ -246,12 +244,12 @@ export default function ZeroChat() {
           <Button
             variant="outline"
             size="icon"
-            className={`rounded - full w - 12 h - 12 border - white / 20 ${ isListening ? 'bg-red-500/20 border-red-500 text-red-500 animate-pulse' : 'hover:bg-white/10' } `}
+            className={`rounded - full w - 12 h - 12 border - white / 20 ${isListening ? 'bg-red-500/20 border-red-500 text-red-500 animate-pulse' : 'hover:bg-white/10'} `}
             onClick={toggleListening}
           >
             <Mic className="w-5 h-5" />
           </Button>
-          
+
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -259,9 +257,9 @@ export default function ZeroChat() {
             placeholder="Message Zero..."
             className="bg-white/5 border-white/10 text-white rounded-full px-6 focus:ring-blue-500/50"
           />
-          
-          <Button 
-            onClick={handleSend} 
+
+          <Button
+            onClick={handleSend}
             disabled={!input.trim() || chatMutation.isPending}
             className="rounded-full w-12 h-12 bg-blue-600 hover:bg-blue-700"
           >
@@ -272,4 +270,3 @@ export default function ZeroChat() {
     </div>
   );
 }
-```
