@@ -5,11 +5,14 @@ export interface ChatMessage {
   id: string;
   username: string;
   message: string;
-  platform: 'kick' | 'twitch' | 'tiktok';
+  platform: 'kick' | 'twitch' | 'tiktok' | 'socialstream' | 'youtube' | 'facebook';
   timestamp: Date;
   userAvatar?: string;
   badges?: string[];
   color?: string;
+  hasDonation?: string;
+  membership?: string;
+  event?: string | boolean;
 }
 
 export interface PlatformConfig {
@@ -26,6 +29,7 @@ class ChatAggregatorService extends EventEmitter {
   private kickWs: WebSocket | null = null;
   private twitchWs: WebSocket | null = null;
   private tiktokWs: WebSocket | null = null;
+  private socialStreamWs: WebSocket | null = null;
 
   private messageBuffer: ChatMessage[] = [];
   private readonly maxBufferSize = 100;
@@ -42,6 +46,7 @@ class ChatAggregatorService extends EventEmitter {
     this.connectionStatus.set('kick', 'disconnected');
     this.connectionStatus.set('twitch', 'disconnected');
     this.connectionStatus.set('tiktok', 'disconnected');
+    this.connectionStatus.set('socialstream', 'disconnected');
   }
 
   async initialize() {
@@ -88,6 +93,21 @@ class ChatAggregatorService extends EventEmitter {
       await this.connectTikTok(tiktokConfig);
     } else {
       console.log('[ChatAggregator] TikTok integration disabled - no API key found');
+    }
+
+    const socialStreamConfig: PlatformConfig = {
+      enabled: !!process.env.SOCIAL_STREAM_SESSION_ID,
+      credentials: {
+        apiKey: process.env.SOCIAL_STREAM_SESSION_ID,
+      }
+    };
+
+    if (socialStreamConfig.enabled) {
+      await this.connectSocialStream(socialStreamConfig);
+    } else {
+      console.log('[ChatAggregator] Social Stream Ninja integration disabled - no SESSION_ID found');
+      console.log('[ChatAggregator] To enable: Set SOCIAL_STREAM_SESSION_ID in your .env file');
+      console.log('[ChatAggregator] Get your session ID from Social Stream Ninja: https://socialstream.ninja');
     }
 
     console.log('[ChatAggregator] Service initialized');
@@ -257,6 +277,101 @@ class ChatAggregatorService extends EventEmitter {
     }
   }
 
+  private async connectSocialStream(config: PlatformConfig) {
+    if (this.isConnecting.get('socialstream')) {
+      console.log('[SocialStream] Already connecting...');
+      return;
+    }
+
+    this.isConnecting.set('socialstream', true);
+    this.connectionStatus.set('socialstream', 'connecting');
+
+    try {
+      const sessionId = config.credentials.apiKey;
+      const inChannel = process.env.SOCIAL_STREAM_IN_CHANNEL || '1';
+      const outChannel = process.env.SOCIAL_STREAM_OUT_CHANNEL || '1';
+
+      const wsUrl = `wss://io.socialstream.ninja/join/${sessionId}/${inChannel}/${outChannel}`;
+
+      console.log('[SocialStream] Connecting to Social Stream Ninja...');
+      console.log(`[SocialStream] Session: ${sessionId}, In: ${inChannel}, Out: ${outChannel}`);
+
+      this.socialStreamWs = new WebSocket(wsUrl);
+
+      this.socialStreamWs.on('open', () => {
+        console.log('[SocialStream] WebSocket connection established');
+        console.log('[SocialStream] Listening for messages from all connected platforms');
+        this.connectionStatus.set('socialstream', 'connected');
+        this.reconnectAttempts.set('socialstream', 0);
+        this.emit('platform-connected', 'socialstream');
+      });
+
+      this.socialStreamWs.on('message', (data: Buffer) => {
+        try {
+          const message = JSON.parse(data.toString());
+          this.handleSocialStreamMessage(message);
+        } catch (error) {
+          console.error('[SocialStream] Error parsing message:', error);
+        }
+      });
+
+      this.socialStreamWs.on('error', (error) => {
+        console.error('[SocialStream] WebSocket error:', error);
+        this.connectionStatus.set('socialstream', 'error');
+        this.emit('platform-error', { platform: 'socialstream', error });
+      });
+
+      this.socialStreamWs.on('close', () => {
+        console.log('[SocialStream] WebSocket connection closed');
+        this.connectionStatus.set('socialstream', 'disconnected');
+        this.isConnecting.set('socialstream', false);
+        this.scheduleReconnect('socialstream', config);
+      });
+
+      this.isConnecting.set('socialstream', false);
+    } catch (error) {
+      console.error('[SocialStream] Connection error:', error);
+      this.connectionStatus.set('socialstream', 'error');
+      this.isConnecting.set('socialstream', false);
+      this.scheduleReconnect('socialstream', config);
+    }
+  }
+
+  private handleSocialStreamMessage(data: any) {
+    try {
+      if (!data.chatname || !data.chatmessage) {
+        return;
+      }
+
+      const platformMap: Record<string, ChatMessage['platform']> = {
+        'twitch': 'twitch',
+        'kick': 'kick',
+        'youtube': 'youtube',
+        'facebook': 'facebook',
+        'tiktok': 'tiktok',
+      };
+
+      const platform = platformMap[data.type?.toLowerCase()] || 'socialstream';
+
+      const message: ChatMessage = {
+        id: `socialstream-${data.id || Date.now()}`,
+        username: data.chatname,
+        message: data.chatmessage,
+        platform,
+        timestamp: new Date(),
+        userAvatar: data.chatimg,
+        color: data.nameColor,
+        hasDonation: data.hasDonation,
+        membership: data.membership,
+        event: data.event,
+      };
+
+      this.addMessage(message);
+    } catch (error) {
+      console.error('[SocialStream] Error handling message:', error);
+    }
+  }
+
   private handleKickMessage(data: any) {
     try {
       const message: ChatMessage = {
@@ -353,6 +468,9 @@ class ChatAggregatorService extends EventEmitter {
         case 'tiktok':
           this.connectTikTok(config);
           break;
+        case 'socialstream':
+          this.connectSocialStream(config);
+          break;
       }
     }, delay);
 
@@ -368,6 +486,7 @@ class ChatAggregatorService extends EventEmitter {
       kick: this.connectionStatus.get('kick') || 'disconnected',
       twitch: this.connectionStatus.get('twitch') || 'disconnected',
       tiktok: this.connectionStatus.get('tiktok') || 'disconnected',
+      socialstream: this.connectionStatus.get('socialstream') || 'disconnected',
     };
   }
 
@@ -394,12 +513,18 @@ class ChatAggregatorService extends EventEmitter {
       this.tiktokWs = null;
     }
 
+    if (this.socialStreamWs) {
+      this.socialStreamWs.close();
+      this.socialStreamWs = null;
+    }
+
     this.connectionStatus.set('kick', 'disconnected');
     this.connectionStatus.set('twitch', 'disconnected');
     this.connectionStatus.set('tiktok', 'disconnected');
+    this.connectionStatus.set('socialstream', 'disconnected');
   }
 
-  injectTestMessage(platform: 'kick' | 'twitch' | 'tiktok', username: string, message: string) {
+  injectTestMessage(platform: 'kick' | 'twitch' | 'tiktok' | 'socialstream' | 'youtube' | 'facebook', username: string, message: string) {
     const testMessage: ChatMessage = {
       id: `${platform}-test-${Date.now()}`,
       username,

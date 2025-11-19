@@ -5,28 +5,29 @@ import { Card } from "@/components/ui/card";
 import { Sparkles, Users, BookOpen, Mic, Loader2, ArrowRight, Play } from "lucide-react";
 import { fetchActiveCharacters } from "@/lib/api";
 import heroImage from "@assets/generated_images/cosmic_spiritual_hero_background_08afb362.png";
-import marcusAvatar from "@/assets/generated_images/Marcus_wise_director_portrait_sv5sm1qh.png";
-import elenaAvatar from "@/assets/generated_images/Elena_skeptic_portrait_gafo9wcq.png";
-import sophiaAvatar from "@/assets/generated_images/Sophia_healer_portrait_yse29t2p.png";
-import jamesAvatar from "@/assets/generated_images/James_conspiracy_hunter_portrait_pilvs1nt.png";
-import destinyAvatar from "@/assets/generated_images/Destiny_motivation_portrait_87d4qztu.png";
-import nathanAvatar from "@/assets/generated_images/Nathan_news_oracle_portrait_a3z0k1xg.png";
-import rachelAvatar from "@/assets/generated_images/Rachel_scripture_monk_portrait_e0w6jn7e.png";
-import victorAvatar from "@/assets/generated_images/Victor_wealth_architect_portrait_fx52jxr2.png";
-import mayaAvatar from "@/assets/generated_images/Maya_style_icon_portrait_mekhvuyi.png";
-import isaacAvatar from "@/assets/generated_images/Isaac_future_prophet_portrait_tjnkph47.png";
+import marcusAvatar from "@assets/generated_images/Marcus_wise_director_portrait_sv5sm1qh.png";
+import elenaAvatar from "@assets/generated_images/Elena_skeptic_portrait_gafo9wcq.png";
+import sophiaAvatar from "@assets/generated_images/Sophia_healer_portrait_yse29t2p.png";
+import jamesAvatar from "@assets/generated_images/James_conspiracy_hunter_portrait_pilvs1nt.png";
+import destinyAvatar from "@assets/generated_images/Destiny_motivation_portrait_87d4qztu.png";
+import nathanAvatar from "@assets/generated_images/Nathan_news_oracle_portrait_a3z0k1xg.png";
+import rachelAvatar from "@assets/generated_images/Rachel_scripture_monk_portrait_e0w6jn7e.png";
+import victorAvatar from "@assets/generated_images/Victor_wealth_architect_portrait_fx52jxr2.png";
+import mayaAvatar from "@assets/generated_images/Maya_style_icon_portrait_mekhvuyi.png";
+import isaacAvatar from "@assets/generated_images/Isaac_future_prophet_portrait_tjnkph47.png";
 
+// Map character IDs to their avatar images
 const avatarMap: Record<string, string> = {
-  marcus: marcusAvatar,
-  elena: elenaAvatar,
-  sophia: sophiaAvatar,
-  james: jamesAvatar,
-  destiny: destinyAvatar,
-  nathan: nathanAvatar,
-  rachel: rachelAvatar,
-  victor: victorAvatar,
-  maya: mayaAvatar,
-  isaac: isaacAvatar,
+  zero: marcusAvatar,
+  m7: elenaAvatar,
+  synq: sophiaAvatar,
+  flux: jamesAvatar,
+  vibe: destinyAvatar,
+  echopulse: nathanAvatar,
+  link: rachelAvatar,
+  ledge: victorAvatar,
+  drip: mayaAvatar,
+  horizon: isaacAvatar,
 };
 
 export default function Landing() {

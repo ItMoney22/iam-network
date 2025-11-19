@@ -7,6 +7,7 @@ import type { Express} from 'express';
 import multer from 'multer';
 import { zeroService, type ZeroMessage } from '../services/zeroService';
 import { zeroKB } from '../services/zeroKnowledgeBase';
+import { zeroChatMonitor } from '../../server/services/zeroChatMonitor';
 
 // Configure multer for audio uploads
 const upload = multer({
@@ -248,6 +249,151 @@ export function registerZeroRoutes(app: Express) {
       res.status(500).json({
         status: 'error',
         error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  /**
+   * POST /api/zero/monitor/start
+   * Start Zero's chat monitoring
+   */
+  app.post('/api/zero/monitor/start', async (req, res) => {
+    try {
+      const { analysisInterval, batchSize, alertThreshold } = req.body;
+
+      await zeroChatMonitor.startMonitoring({
+        analysisInterval,
+        batchSize,
+        alertThreshold,
+      });
+
+      res.json({
+        message: 'Chat monitoring started',
+        status: zeroChatMonitor.getStatus(),
+      });
+    } catch (error) {
+      console.error('Zero monitor start error:', error);
+      res.status(500).json({
+        error: 'Failed to start monitoring',
+        details: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  /**
+   * POST /api/zero/monitor/stop
+   * Stop Zero's chat monitoring
+   */
+  app.post('/api/zero/monitor/stop', async (req, res) => {
+    try {
+      zeroChatMonitor.stopMonitoring();
+
+      res.json({
+        message: 'Chat monitoring stopped',
+        status: zeroChatMonitor.getStatus(),
+      });
+    } catch (error) {
+      console.error('Zero monitor stop error:', error);
+      res.status(500).json({
+        error: 'Failed to stop monitoring',
+        details: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  /**
+   * GET /api/zero/monitor/status
+   * Get monitoring status
+   */
+  app.get('/api/zero/monitor/status', async (req, res) => {
+    try {
+      res.json(zeroChatMonitor.getStatus());
+    } catch (error) {
+      console.error('Zero monitor status error:', error);
+      res.status(500).json({
+        error: 'Failed to get monitoring status',
+        details: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  /**
+   * GET /api/zero/monitor/alerts
+   * Get all alerts
+   */
+  app.get('/api/zero/monitor/alerts', async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const priority = req.query.priority as string | undefined;
+
+      const alerts = priority
+        ? zeroChatMonitor.getAlertsByPriority(priority as any)
+        : zeroChatMonitor.getAlerts(limit);
+
+      res.json({ alerts });
+    } catch (error) {
+      console.error('Zero monitor alerts error:', error);
+      res.status(500).json({
+        error: 'Failed to get alerts',
+        details: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  /**
+   * DELETE /api/zero/monitor/alerts/:alertId
+   * Clear a specific alert
+   */
+  app.delete('/api/zero/monitor/alerts/:alertId', async (req, res) => {
+    try {
+      const { alertId } = req.params;
+      zeroChatMonitor.clearAlert(alertId);
+
+      res.json({ message: 'Alert cleared', alertId });
+    } catch (error) {
+      console.error('Zero monitor clear alert error:', error);
+      res.status(500).json({
+        error: 'Failed to clear alert',
+        details: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  /**
+   * DELETE /api/zero/monitor/alerts
+   * Clear all alerts
+   */
+  app.delete('/api/zero/monitor/alerts', async (req, res) => {
+    try {
+      zeroChatMonitor.clearAllAlerts();
+
+      res.json({ message: 'All alerts cleared' });
+    } catch (error) {
+      console.error('Zero monitor clear all alerts error:', error);
+      res.status(500).json({
+        error: 'Failed to clear all alerts',
+        details: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  /**
+   * PUT /api/zero/monitor/config
+   * Update monitoring configuration
+   */
+  app.put('/api/zero/monitor/config', async (req, res) => {
+    try {
+      zeroChatMonitor.updateConfig(req.body);
+
+      res.json({
+        message: 'Configuration updated',
+        config: zeroChatMonitor.getConfig(),
+      });
+    } catch (error) {
+      console.error('Zero monitor config error:', error);
+      res.status(500).json({
+        error: 'Failed to update configuration',
+        details: error instanceof Error ? error.message : String(error),
       });
     }
   });
