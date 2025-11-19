@@ -378,45 +378,43 @@ export default function ControlPanel() {
                   <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                     {characters
                       .filter(char => avatarMap[char.id]) // Only show characters that are in our config/map
-                      .map((char) => {
-                        const isMuted = mutedCharacters.has(char.id);
-                        return (
-                          <div
-                            key={char.id} className={`flex items-center justify-between p-3 rounded-xl transition-all duration-300 ${char.isActive ? 'bg-white/10 border border-white/20' : 'bg-white/5 border border-transparent opacity-60'}`}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="relative">
-                                <div
-                                  className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-black"
-                                  style={{
-                                    "--tw-ring-color": char.auraColor,
-                                    boxShadow: char.isActive ? `0 0 15px ${char.auraColor}60` : 'none',
-                                  } as React.CSSProperties}
-                                >
-                                  <img
-                                    src={avatarMap[char.id]}
-                                    alt={char.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                {char.isActive && (
-                                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-black" />
-                                )}
+                      .map((char) => (
+                        <div
+                          key={char.id} className={`flex items-center justify-between p-3 rounded-xl transition-all duration-300 ${char.isActive ? 'bg-white/10 border border-white/20' : 'bg-white/5 border border-transparent opacity-60'}`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="relative">
+                              <div
+                                className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-offset-2 ring-offset-black"
+                                style={{
+                                  "--tw-ring-color": char.auraColor,
+                                  boxShadow: char.isActive ? `0 0 15px ${char.auraColor}60` : 'none',
+                                } as React.CSSProperties}
+                              >
+                                <img
+                                  src={avatarMap[char.id]}
+                                  alt={char.name}
+                                  className="w-full h-full object-cover"
+                                />
                               </div>
-                              <div>
-                                <p className="text-white font-bold">{char.name}</p>
-                                <p className="text-white/50 text-xs">{char.role}</p>
-                              </div>
+                              {char.isActive && (
+                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-black" />
+                              )}
                             </div>
-
-                            <Switch
-                              checked={char.isActive}
-                              onCheckedChange={() => handleToggleCharacter(char)}
-                              disabled={toggleMutation.isPending}
-                              className="data-[state=checked]:bg-green-500"
-                            />
+                            <div>
+                              <p className="text-white font-bold">{char.name}</p>
+                              <p className="text-white/50 text-xs">{char.role}</p>
+                            </div>
                           </div>
-                        ))}
+
+                          <Switch
+                            checked={char.isActive}
+                            onCheckedChange={() => handleToggleCharacter(char)}
+                            disabled={toggleMutation.isPending}
+                            className="data-[state=checked]:bg-green-500"
+                          />
+                        </div>
+                      ))}
                   </div>
                 </ScrollArea>
               </CardContent>
