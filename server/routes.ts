@@ -295,29 +295,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 async function initializeData() {
   try {
     // Seed characters
-    const existingChars = await storage.getAllCharacters();
-    if (existingChars.length === 0) {
-      console.log("Seeding characters...");
-      for (const char of CHARACTERS) {
-        await storage.createCharacter({
-          id: char.id,
-          name: char.name,
-          description: char.description,
-          llmModel: char.llmModel,
-          llmProvider: char.llmProvider,
-          temperature: char.temperature,
-          role: char.role,
-          voiceProvider: char.voiceProvider,
-          voiceId: char.voiceId,
-          disfluencyLevel: char.disfluencyLevel,
-          avatarImageUrl: char.avatarImageUrl,
-          auraColor: char.auraColor,
-          accentTone: char.accentTone,
-          isActive: char.id === "zero" || char.id === "m7" || char.id === "synq",
-        });
-      }
-      console.log(`Seeded ${CHARACTERS.length} characters`);
+    // Seed characters (Sync with config)
+    console.log("Syncing characters with config...");
+    const activeIds = new Set(CHARACTERS.map(c => c.id));
+
+    // 1. Upsert all characters from config
+    for (const char of CHARACTERS) {
+      await storage.upsertCharacter({
+        id: char.id,
+        name: char.name,
+        description: char.description,
+        llmModel: char.llmModel,
+        llmProvider: char.llmProvider,
+        temperature: char.temperature,
+        role: char.role,
+        voiceProvider: char.voiceProvider,
+        voiceId: char.voiceId,
+        disfluencyLevel: char.disfluencyLevel,
+        avatarImageUrl: char.avatarImageUrl,
+        auraColor: char.auraColor,
+        accentTone: char.accentTone,
+        isActive: true, // Always active if in config
+      });
     }
+
+    // 2. Deactivate characters not in config
+    const allChars = await storage.getAllCharacters();
+    for (const char of allChars) {
+      if (!activeIds.has(char.id) && char.isActive) {
+        console.log(`Deactivating old character: ${char.name} (${char.id})`);
+        await storage.updateCharacterActive(char.id, false);
+      }
+    }
+    console.log(`Synced ${CHARACTERS.length} characters`);
 
     // Seed knowledge base
     await seedKnowledgeBase();

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sparkles, Users, BookOpen, Mic, Loader2, ArrowRight, Play } from "lucide-react";
-import { fetchCharacters } from "@/lib/api";
+import { fetchActiveCharacters } from "@/lib/api";
 import heroImage from "@assets/generated_images/cosmic_spiritual_hero_background_08afb362.png";
 import marcusAvatar from "@/assets/generated_images/Marcus_wise_director_portrait_sv5sm1qh.png";
 import elenaAvatar from "@/assets/generated_images/Elena_skeptic_portrait_gafo9wcq.png";
@@ -31,8 +31,8 @@ const avatarMap: Record<string, string> = {
 
 export default function Landing() {
   const { data: characters = [], isLoading } = useQuery({
-    queryKey: ["/api/characters"],
-    queryFn: fetchCharacters,
+    queryKey: ["/api/characters/active"],
+    queryFn: fetchActiveCharacters,
   });
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">

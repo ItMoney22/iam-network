@@ -1,5 +1,5 @@
 // Database storage implementation using blueprint:javascript_database
-import { 
+import {
   episodes, characters, turns, knowledgeBase, preshowPrep,
   type Episode, type InsertEpisode,
   type Character, type InsertCharacter,
@@ -28,6 +28,7 @@ export interface IStorage {
   getAllCharacters(): Promise<Character[]>;
   getActiveCharacters(): Promise<Character[]>;
   updateCharacterActive(id: string, isActive: boolean): Promise<void>;
+  upsertCharacter(character: InsertCharacter): Promise<Character>;
 
   // Preshow Prep
   createPreshowPrep(prep: InsertPreshowPrep): Promise<PreshowPrep>;
@@ -109,6 +110,18 @@ export class DatabaseStorage implements IStorage {
     await db.update(characters).set({ isActive }).where(eq(characters.id, id));
   }
 
+  async upsertCharacter(insertCharacter: InsertCharacter): Promise<Character> {
+    const [character] = await db
+      .insert(characters)
+      .values(insertCharacter)
+      .onConflictDoUpdate({
+        target: characters.id,
+        set: insertCharacter,
+      })
+      .returning();
+    return character;
+  }
+
   // Preshow Prep
   async createPreshowPrep(insertPrep: InsertPreshowPrep): Promise<PreshowPrep> {
     const [prep] = await db
@@ -123,7 +136,7 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(preshowPrep)
       .where(eq(preshowPrep.episodeId, insertPrep.episodeId!));
-    
+
     // Insert new prep
     const [prep] = await db
       .insert(preshowPrep)
