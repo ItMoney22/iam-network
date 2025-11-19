@@ -59,7 +59,7 @@ class ImageGenerationService {
         }
       );
 
-      const imageUrl = Array.isArray(output) ? output[0] : output as string;
+      const imageUrl = Array.isArray(output) ? output[0] : output as unknown as string;
 
       return {
         url: imageUrl,
@@ -104,7 +104,7 @@ class ImageGenerationService {
         }
       );
 
-      const imageUrl = Array.isArray(output) ? output[0] : output as string;
+      const imageUrl = Array.isArray(output) ? output[0] : output as unknown as string;
 
       return {
         url: imageUrl,
@@ -150,7 +150,7 @@ class ImageGenerationService {
         }
       );
 
-      const imageUrl = Array.isArray(output) ? output[0] : output as string;
+      const imageUrl = Array.isArray(output) ? output[0] : output as unknown as string;
 
       return {
         url: imageUrl,

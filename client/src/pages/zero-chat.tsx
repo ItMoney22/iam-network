@@ -1,19 +1,27 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Send, Lock, Brain, Sparkles, Play, Pause, Volume2 } from "lucide-react";
+import { Mic, Send, Lock, Brain, Sparkles, Play, Pause, Volume2, Settings, Upload, Globe, Zap, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   audioUrl?: string;
 }
+
+type ZeroMode = 'conversation' | 'dev' | 'ops' | 'show' | 'assistant' | 'unhinged';
 
 export default function ZeroChat() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,6 +31,8 @@ export default function ZeroChat() {
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const [mode, setMode] = useState<ZeroMode>('conversation');
+  const [showSettings, setShowSettings] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -36,7 +46,6 @@ export default function ZeroChat() {
 
   // Simple Auth Check
   const handleLogin = () => {
-    // Hardcoded for now, can be moved to env later
     if (accessCode === "0000" || accessCode === "iamgod") {
       setIsAuthenticated(true);
     } else {
@@ -51,8 +60,7 @@ export default function ZeroChat() {
   // Chat Mutation
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
-      // Construct the messages array for the backend
-      const currentHistory = messages.slice(-5).map(msg => ({
+      const currentHistory = messages.slice(-10).map(msg => ({
         role: msg.role,
         content: msg.content
       }));
@@ -61,7 +69,9 @@ export default function ZeroChat() {
         messages: [
           ...currentHistory,
           { role: "user", content: message }
-        ]
+        ],
+        mode: mode, // Send selected mode
+        model: "gemini-1.5-pro-latest" // Use Gemini
       };
 
       const res = await apiRequest("POST", "/api/zero/chat", payload);
@@ -70,20 +80,19 @@ export default function ZeroChat() {
     onSuccess: (data) => {
       const newMessage: Message = {
         role: "assistant",
-        content: data.content,
+        content: data.message,
         audioUrl: data.audioUrl,
       };
       setMessages((prev) => [...prev, newMessage]);
 
-      // Auto-play audio
       if (data.audioUrl) {
         playAudio(data.audioUrl);
       }
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Zero is unreachable right now.",
+        title: "Connection Lost",
+        description: "Zero is unreachable. Check neural link.",
         variant: "destructive",
       });
     },
@@ -91,7 +100,6 @@ export default function ZeroChat() {
 
   const handleSend = () => {
     if (!input.trim()) return;
-
     const userMsg: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMsg]);
     chatMutation.mutate(input);
@@ -110,17 +118,16 @@ export default function ZeroChat() {
     audio.onended = () => setIsPlaying(false);
   };
 
-  // Voice Input (Web Speech API)
+  // Voice Input
   const toggleListening = () => {
     if (isListening) {
-      // Stop listening logic handled by onend
       setIsListening(false);
       return;
     }
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      toast({ title: "Error", description: "Browser does not support speech recognition.", variant: "destructive" });
+      toast({ title: "Hardware Error", description: "Voice input module not detected.", variant: "destructive" });
       return;
     }
 
@@ -131,12 +138,13 @@ export default function ZeroChat() {
 
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
-
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setInput(transcript);
-      // Optional: Auto-send
-      // handleSend(); 
+      // Auto-send for fluid conversation
+      const userMsg: Message = { role: "user", content: transcript };
+      setMessages((prev) => [...prev, userMsg]);
+      chatMutation.mutate(transcript);
     };
 
     recognition.start();
@@ -144,26 +152,34 @@ export default function ZeroChat() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-[url('@assets/generated_images/cosmic_spiritual_hero_background_08afb362.png')] bg-cover bg-center opacity-20" />
-        <Card className="w-full max-w-md bg-black/80 border-white/10 backdrop-blur-xl relative z-10">
-          <CardContent className="pt-6 space-y-4 text-center">
-            <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-4 ring-2 ring-blue-500/50">
-              <Lock className="w-8 h-8 text-blue-400" />
+      <div className="min-h-screen bg-black flex items-center justify-center p-4 overflow-hidden relative">
+        {/* Cosmic Background */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-black to-black" />
+        <div className="absolute inset-0 bg-[url('/assets/zero/identity.png')] bg-cover bg-center opacity-20 blur-sm scale-110" />
+
+        <Card className="w-full max-w-md bg-black/40 border-white/10 backdrop-blur-2xl relative z-10 shadow-2xl shadow-blue-900/20">
+          <CardContent className="pt-8 space-y-6 text-center">
+            <div className="relative w-24 h-24 mx-auto mb-6">
+              <div className="absolute inset-0 bg-blue-500/20 rounded-full animate-pulse" />
+              <img src="/assets/zero/identity.png" alt="Zero" className="w-full h-full rounded-full object-cover border-2 border-blue-400/50 relative z-10" />
             </div>
-            <h2 className="text-2xl font-bold text-white">Zero Access</h2>
-            <p className="text-gray-400">Enter your personal access code.</p>
-            <div className="flex gap-2">
+
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">ZERO 2.0</h2>
+              <p className="text-blue-200/60 font-mono text-xs tracking-[0.2em]">NEURAL INTERFACE LOCKED</p>
+            </div>
+
+            <div className="flex gap-2 max-w-xs mx-auto">
               <Input
                 type="password"
                 value={accessCode}
                 onChange={(e) => setAccessCode(e.target.value)}
-                className="bg-white/5 border-white/10 text-white text-center tracking-widest"
-                placeholder="••••"
+                className="bg-white/5 border-white/10 text-white text-center tracking-widest font-mono focus:border-blue-500/50 transition-all"
+                placeholder="ACCESS CODE"
                 onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
               />
-              <Button onClick={handleLogin} className="bg-blue-600 hover:bg-blue-700">
-                Unlock
+              <Button onClick={handleLogin} className="bg-blue-600/80 hover:bg-blue-600 text-white px-6">
+                <Lock className="w-4 h-4" />
               </Button>
             </div>
           </CardContent>
@@ -173,108 +189,163 @@ export default function ZeroChat() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-[url('@assets/generated_images/cosmic_spiritual_hero_background_08afb362.png')] bg-cover bg-center opacity-10 pointer-events-none" />
+    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden font-sans selection:bg-blue-500/30">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_var(--tw-gradient-stops))] from-blue-900/10 via-black to-black pointer-events-none" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
 
       {/* Header */}
-      <header className="p-4 border-b border-white/10 bg-black/50 backdrop-blur-md flex items-center justify-between z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center ring-1 ring-blue-500/50">
-            <Brain className="w-5 h-5 text-blue-400" />
+      <header className="p-4 border-b border-white/5 bg-black/20 backdrop-blur-sm flex items-center justify-between z-20">
+        <div className="flex items-center gap-4">
+          <div className="relative w-10 h-10 group cursor-pointer">
+            <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-md group-hover:bg-blue-500/40 transition-all" />
+            <img src="/assets/zero/identity.png" alt="Zero" className="w-full h-full rounded-full object-cover border border-white/10 relative z-10" />
           </div>
           <div>
-            <h1 className="font-bold text-lg tracking-wide">ZERO</h1>
-            <p className="text-xs text-blue-400/80 uppercase tracking-wider">Personal Assistant</p>
+            <h1 className="font-bold text-lg tracking-wide flex items-center gap-2">
+              ZERO <span className="text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/20">v2.0</span>
+            </h1>
+            <div className="flex items-center gap-2">
+              <div className={`w-1.5 h-1.5 rounded-full ${chatMutation.isPending ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`} />
+              <p className="text-xs text-gray-400 uppercase tracking-wider font-mono">{mode} MODE</p>
+            </div>
           </div>
         </div>
-        {isPlaying && (
-          <div className="flex items-center gap-2 text-blue-400 animate-pulse">
-            <Volume2 className="w-4 h-4" />
-            <span className="text-xs font-mono">SPEAKING...</span>
-          </div>
-        )}
+
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-white hover:bg-white/5">
+                <Settings className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-black/90 border-white/10 text-white backdrop-blur-xl w-48">
+              <DropdownMenuItem onClick={() => setMode('conversation')} className="hover:bg-white/10 cursor-pointer">
+                <Brain className="w-4 h-4 mr-2 text-blue-400" /> Conversation
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setMode('dev')} className="hover:bg-white/10 cursor-pointer">
+                <Terminal className="w-4 h-4 mr-2 text-green-400" /> Dev Mode
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setMode('unhinged')} className="hover:bg-white/10 cursor-pointer">
+                <Zap className="w-4 h-4 mr-2 text-red-400" /> Unhinged (Raw)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setMode('show')} className="hover:bg-white/10 cursor-pointer">
+                <Globe className="w-4 h-4 mr-2 text-purple-400" /> Show Mode
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
-      {/* Chat Area */}
-      <ScrollArea className="flex-1 p-4 z-10">
-        <div className="max-w-3xl mx-auto space-y-6 pb-4">
-          {messages.length === 0 && (
-            <div className="text-center text-gray-500 mt-20">
-              <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>I am ready, David.</p>
-              <p className="text-sm mt-2">Ask me to remember something or retrieve a memory.</p>
-            </div>
-          )}
-
-          {messages.map((msg, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} `}
-            >
-              <div
-                className={`max - w - [80 %] p - 4 rounded - 2xl ${msg.role === "user"
-                  ? "bg-blue-600/20 border border-blue-500/30 text-blue-100"
-                  : "bg-white/10 border border-white/10 text-gray-100"
-                  } `}
-              >
-                <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                {msg.audioUrl && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-2 h-6 text-xs text-blue-300 hover:text-blue-200 p-0"
-                    onClick={() => playAudio(msg.audioUrl!)}
-                  >
-                    <Play className="w-3 h-3 mr-1" /> Replay Voice
-                  </Button>
-                )}
-              </div>
-            </motion.div>
-          ))}
-
-          {chatMutation.isPending && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-              <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex gap-2 items-center">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-75" />
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-150" />
-              </div>
-            </motion.div>
-          )}
-          <div ref={scrollRef} />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col relative z-10">
+        {/* Central Identity / Visualization */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
+          <div className={`relative transition-all duration-1000 ${isPlaying ? 'scale-110' : 'scale-100'}`}>
+            <div className={`absolute inset-0 bg-blue-500/20 rounded-full blur-[100px] animate-pulse ${mode === 'unhinged' ? 'bg-red-500/20' : ''}`} />
+            <img
+              src="/assets/zero/identity.png"
+              alt="Zero Core"
+              className={`w-96 h-96 object-cover rounded-full opacity-50 mix-blend-screen grayscale hover:grayscale-0 transition-all duration-700 ${isPlaying ? 'animate-pulse' : ''}`}
+            />
+          </div>
         </div>
-      </ScrollArea>
+
+        {/* Chat Scroll */}
+        <ScrollArea className="flex-1 p-4">
+          <div className="max-w-4xl mx-auto space-y-8 pb-4 min-h-[50vh] flex flex-col justify-end">
+            {messages.length === 0 && (
+              <div className="text-center space-y-4 mt-20">
+                <h2 className="text-4xl font-bold text-white/20 tracking-tighter">How can I serve you?</h2>
+              </div>
+            )}
+
+            <AnimatePresence>
+              {messages.map((msg, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[80%] p-6 rounded-3xl backdrop-blur-md ${msg.role === "user"
+                      ? "bg-white/5 border border-white/10 text-white rounded-tr-sm"
+                      : "bg-blue-900/10 border border-blue-500/20 text-blue-100 rounded-tl-sm shadow-[0_0_30px_-10px_rgba(59,130,246,0.2)]"
+                      }`}
+                  >
+                    <p className="text-lg leading-relaxed whitespace-pre-wrap font-light">{msg.content}</p>
+                    {msg.audioUrl && (
+                      <div className="mt-3 flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity cursor-pointer" onClick={() => playAudio(msg.audioUrl!)}>
+                        <Volume2 className="w-4 h-4" />
+                        <span className="text-xs font-mono">REPLAY TRANSMISSION</span>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {chatMutation.isPending && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                <div className="flex gap-1 items-center px-4 py-2">
+                  <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </motion.div>
+            )}
+            <div ref={scrollRef} />
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Input Area */}
-      <div className="p-4 bg-black/80 backdrop-blur-xl border-t border-white/10 z-20">
-        <div className="max-w-3xl mx-auto flex gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            className={`rounded - full w - 12 h - 12 border - white / 20 ${isListening ? 'bg-red-500/20 border-red-500 text-red-500 animate-pulse' : 'hover:bg-white/10'} `}
-            onClick={toggleListening}
-          >
-            <Mic className="w-5 h-5" />
-          </Button>
+      <div className="p-6 bg-gradient-to-t from-black via-black/90 to-transparent z-20">
+        <div className="max-w-3xl mx-auto relative">
+          <div className="absolute inset-0 bg-blue-500/5 blur-2xl rounded-full" />
+          <div className="relative bg-white/5 border border-white/10 backdrop-blur-xl rounded-full p-2 flex items-center gap-2 shadow-2xl">
 
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Message Zero..."
-            className="bg-white/5 border-white/10 text-white rounded-full px-6 focus:ring-blue-500/50"
-          />
+            <Button
+              size="icon"
+              className={`rounded-full w-12 h-12 transition-all duration-300 ${isListening
+                ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.5)] scale-110'
+                : 'bg-white/5 hover:bg-white/10 text-white'
+                }`}
+              onClick={toggleListening}
+            >
+              <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
+            </Button>
 
-          <Button
-            onClick={handleSend}
-            disabled={!input.trim() || chatMutation.isPending}
-            className="rounded-full w-12 h-12 bg-blue-600 hover:bg-blue-700"
-          >
-            <Send className="w-5 h-5" />
-          </Button>
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              placeholder={isListening ? "Listening..." : "Message Zero..."}
+              className="bg-transparent border-none text-lg text-white placeholder:text-white/20 focus-visible:ring-0 focus-visible:ring-offset-0 px-4 h-12"
+            />
+
+            <div className="flex items-center gap-2 pr-2">
+              {/* Upload Placeholder - functionality to be added */}
+              <Button size="icon" variant="ghost" className="text-white/40 hover:text-white hover:bg-white/5 rounded-full">
+                <Upload className="w-5 h-5" />
+              </Button>
+
+              <Button
+                onClick={handleSend}
+                disabled={!input.trim() || chatMutation.isPending}
+                className="rounded-full w-10 h-10 bg-blue-600 hover:bg-blue-500 text-white p-0 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+              >
+                <Send className="w-4 h-4 ml-0.5" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="text-center mt-4">
+            <p className="text-[10px] text-white/20 font-mono tracking-[0.3em] uppercase">
+              Zero Personal Assistant v2.0 • {mode} Mode Active
+            </p>
+          </div>
         </div>
       </div>
     </div>

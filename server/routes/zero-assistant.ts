@@ -171,7 +171,8 @@ router.post("/api/zero/chat", async (req, res) => {
             try {
                 // Use Zero's voice ID (male-01)
                 const audioBuffer = await ttsService.generateSpeech(finalContent, "male-01");
-                audioUrl = await gcsService.uploadAudio(audioBuffer);
+                const filename = `zero_voice_${Date.now()}.mp3`;
+                audioUrl = await gcsService.uploadAudio(audioBuffer, filename);
             } catch (ttsError) {
                 console.error("TTS Error:", ttsError);
                 // Don't fail the whole request if TTS fails
