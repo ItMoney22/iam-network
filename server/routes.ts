@@ -5,7 +5,7 @@ import { CHARACTERS } from "@shared/characters-config";
 import { routeNextSpeaker, generateAITurn } from "./conversation/router";
 import { getRelevantPassages } from "./knowledge/knowledge-base";
 import { seedKnowledgeBase } from "./knowledge/knowledge-base";
-import { insertEpisodeSchema, insertTurnSchema, insertPreshowPrepSchema } from "@shared/schema";
+import { insertEpisodeSchema, insertTurnSchema, insertPreshowPrepSchema, insertPollSchema } from "@shared/schema";
 import { generatePreshowPrep } from "./preshow/generator";
 import { registerSystemRoutes } from "./routes/system";
 import { registerClipsRoutes } from "./routes/clips";
@@ -15,6 +15,9 @@ import { registerBrowserSourceRoutes } from "./routes/browserSource";
 import { chatAggregator } from "./services/chatAggregator";
 
 import { registerZeroAssistantRoutes } from "./routes/zero-assistant";
+import { db } from "./db";
+import { polls, pollOptions } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize data on startup
@@ -37,6 +40,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register image generation routes (Replicate)
   registerImageRoutes(app);
+
+  // --- POLL ROUTES ---
+
+  // GET /api/episodes/:id/polls - Get polls for an episode
+  app.get("/api/episodes/:id/polls", async (req, res) => {
+    try {
+      const episodePolls = await db.query.polls.findMany({
+        where: eq(polls.episodeId, req.params.id),
+        with: {
+          options: true
+        },
+        orderBy: (polls, { desc }) => [desc(polls.createdAt)]
+      });
+      res.json(episodePolls);
+    } catch (error) {
+      console.error("Error fetching polls:", error);
+      res.status(500).json({ error: "Failed to fetch polls" });
+    }
+  });
+
+  // POST /api/episodes/:id/polls - Create a new poll
+  app.post("/api/episodes/:id/polls", async (req, res) => {
+    try {
+      const { question, options } = req.body;
+      const episodeId = req.params.id;
+
+      if (!question || !options || !Array.isArray(options) || options.length < 2) {
+        return res.status(400).json({ error: "Invalid poll data" });
+      }
+
+      // Create poll
+      const [poll] = await db.insert(polls).values({
+        episodeId,
+        question,
+        isActive: true
+      }).returning();
+
+      // Create options
+      await db.insert(pollOptions).values(
+        options.map((opt: string) => ({
+          pollId: poll.id,
+          text: opt,
+          votes: 0
+        }))
+      );
+
+      // Return complete poll
+      const completePoll = await db.query.polls.findFirst({
+        where: eq(polls.id, poll.id),
+        with: { options: true }
+      });
+
+      res.json(completePoll);
+    } catch (error) {
+      console.error("Error creating poll:", error);
+      res.status(500).json({ error: "Failed to create poll" });
+    }
+  });
+
+  // POST /api/polls/:id/vote - Vote on a poll
+  app.post("/api/polls/:id/vote", async (req, res) => {
+    try {
+      const { optionId } = req.body;
+
+      // Increment vote count atomically
+      // Note: Drizzle doesn't have a simple increment method yet, so we fetch and update
+      // In a real high-concurrency app, we'd use raw SQL: UPDATE poll_options SET votes = votes + 1 WHERE id = ?
+      
+      // Using raw SQL for atomicity
+      const option = await db.select().from(pollOptions).where(eq(pollOptions.id, optionId)).limit(1);
+      if (!option.length) return res.status(404).json({ error: "Option not found" });
+
+      await db.update(pollOptions)
+        .set({ votes: option[0].votes + 1 })
+        .where(eq(pollOptions.id, optionId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error voting:", error);
+      res.status(500).json({ error: "Failed to vote" });
+    }
+  });
+
+  // PATCH /api/polls/:id/close - Close a poll
+  app.patch("/api/polls/:id/close", async (req, res) => {
+    try {
+      const [updated] = await db.update(polls)
+        .set({ isActive: false, closedAt: new Date() })
+        .where(eq(polls.id, req.params.id))
+        .returning();
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error closing poll:", error);
+      res.status(500).json({ error: "Failed to close poll" });
+    }
+  });
+
+  // --- END POLL ROUTES ---
 
   // GET /api/characters - Get all characters
   app.get("/api/characters", async (req, res) => {

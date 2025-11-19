@@ -26,6 +26,7 @@ import { MessageTemplates } from "@/components/studio/MessageTemplates";
 import { AICoPilotPanel } from "@/components/studio/AICoPilotPanel";
 import { PersonalityControls } from "@/components/studio/PersonalityControls";
 import { DirectorMode } from "@/components/studio/DirectorMode";
+import { PollManager } from "@/components/studio/PollManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import marcusAvatar from "@/assets/generated_images/Marcus_wise_director_portrait_sv5sm1qh.png";
@@ -406,8 +407,9 @@ export default function Studio() {
           <div className="w-80 shrink-0 border-l border-border flex flex-col hidden lg:flex bg-card/10">
             <Tabs defaultValue="chat" className="flex-1 flex flex-col">
               <div className="px-2 pt-2">
-                <TabsList className="w-full grid grid-cols-4 h-8">
+                <TabsList className="w-full grid grid-cols-5 h-8">
                   <TabsTrigger value="chat" className="text-xs px-0">Chat</TabsTrigger>
+                  <TabsTrigger value="polls" className="text-xs px-0">Polls</TabsTrigger>
                   <TabsTrigger value="people" className="text-xs px-0">People</TabsTrigger>
                   <TabsTrigger value="director" className="text-xs px-0">Direct</TabsTrigger>
                   <TabsTrigger value="tuner" className="text-xs px-0">Tune</TabsTrigger>
@@ -416,6 +418,10 @@ export default function Studio() {
 
               <TabsContent value="chat" className="flex-1 overflow-hidden mt-0 border-none data-[state=active]:flex flex-col">
                 <ChatMonitorPanel onAddressAlert={(text) => setMessage(prev => prev + " " + text)} />
+              </TabsContent>
+
+              <TabsContent value="polls" className="flex-1 overflow-hidden mt-0 border-none data-[state=active]:flex flex-col">
+                <PollManager episodeId={currentEpisode.id} />
               </TabsContent>
 
               <TabsContent value="people" className="flex-1 overflow-hidden mt-0 border-none data-[state=active]:flex flex-col">

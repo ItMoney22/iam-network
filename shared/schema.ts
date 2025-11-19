@@ -227,3 +227,54 @@ export const insertMemorySchema = createInsertSchema(memories).omit({
 
 export type Memory = typeof memories.$inferSelect;
 export type InsertMemory = z.infer<typeof insertMemorySchema>;
+
+// Polls - Live audience polling
+export const polls = pgTable("polls", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  episodeId: varchar("episode_id").references(() => episodes.id, { onDelete: "cascade" }),
+  question: text("question").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  closedAt: timestamp("closed_at"),
+});
+
+// Poll Options - Choices for a poll
+export const pollOptions = pgTable("poll_options", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pollId: varchar("poll_id").notNull().references(() => polls.id, { onDelete: "cascade" }),
+  text: text("text").notNull(),
+  votes: integer("votes").notNull().default(0),
+});
+
+// Relations for polls
+export const pollsRelations = relations(polls, ({ many, one }) => ({
+  options: many(pollOptions),
+  episode: one(episodes, {
+    fields: [polls.episodeId],
+    references: [episodes.id],
+  }),
+}));
+
+export const pollOptionsRelations = relations(pollOptions, ({ one }) => ({
+  poll: one(polls, {
+    fields: [pollOptions.pollId],
+    references: [polls.id],
+  }),
+}));
+
+// Insert Schemas for Polls
+export const insertPollSchema = createInsertSchema(polls).omit({
+  id: true,
+  createdAt: true,
+  closedAt: true,
+});
+
+export const insertPollOptionSchema = createInsertSchema(pollOptions).omit({
+  id: true,
+  votes: true,
+});
+
+export type Poll = typeof polls.$inferSelect;
+export type InsertPoll = z.infer<typeof insertPollSchema>;
+export type PollOption = typeof pollOptions.$inferSelect;
+export type InsertPollOption = z.infer<typeof insertPollOptionSchema>;
