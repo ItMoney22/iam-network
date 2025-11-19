@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Settings, ChevronLeft, Loader2, Send, Sparkles } from "lucide-react";
+import { Settings, ChevronLeft, Loader2, Send, Sparkles, PanelLeftClose, PanelRightClose } from "lucide-react";
 import { Link } from "wouter";
 import {
   fetchActiveCharacters,
@@ -18,6 +18,12 @@ import {
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Turn } from "@shared/schema";
+
+// New Components
+import { ChatMonitorPanel } from "@/components/studio/ChatMonitorPanel";
+import { QuickActions } from "@/components/studio/QuickActions";
+import { MessageTemplates } from "@/components/studio/MessageTemplates";
+import { AICoPilotPanel } from "@/components/studio/AICoPilotPanel";
 
 import marcusAvatar from "@/assets/generated_images/Marcus_wise_director_portrait_sv5sm1qh.png";
 import elenaAvatar from "@/assets/generated_images/Elena_skeptic_portrait_gafo9wcq.png";
@@ -47,13 +53,17 @@ export default function Studio() {
   const [message, setMessage] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [routerReasoning, setRouterReasoning] = useState<string | null>(null);
+  const [isAiPaused, setIsAiPaused] = useState(false);
+  const [showLeftPanel, setShowLeftPanel] = useState(true);
+  const [showRightPanel, setShowRightPanel] = useState(true);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const { data: activeCharacters = [], isLoading: loadingCharacters } = useQuery({
     queryKey: ["/api/characters/active"],
     queryFn: fetchActiveCharacters,
-    refetchInterval: 5000, // Poll every 5 seconds for participant changes
+    refetchInterval: 5000,
   });
 
   const { data: episodes = [], isLoading: loadingEpisodes } = useQuery({
@@ -67,8 +77,29 @@ export default function Studio() {
     queryKey: ["/api/episodes", currentEpisode?.id, "turns"],
     queryFn: () => currentEpisode ? fetchEpisodeTurns(currentEpisode.id) : Promise.resolve([]),
     enabled: !!currentEpisode,
-    refetchInterval: 3000, // Poll every 3 seconds for new messages
+    refetchInterval: 3000,
   });
+
+  // Calculate stats for Co-Pilot
+  const episodeStats = {
+    davidTurns: 0,
+    aiTurns: 0,
+    duration: "00:00",
+    currentPacing: "Moderate"
+  };
+
+  if (turns.length > 0) {
+    const davidCount = turns.filter(t => t.speaker === "david").length;
+    const total = turns.length;
+    episodeStats.davidTurns = Math.round((davidCount / total) * 100);
+    episodeStats.aiTurns = 100 - episodeStats.davidTurns;
+    
+    // Simple duration estimation (diff between first and last turn)
+    const start = new Date(turns[0].timestamp).getTime();
+    const end = new Date(turns[turns.length-1].timestamp).getTime();
+    const diffMins = Math.floor((end - start) / 60000);
+    episodeStats.duration = `${diffMins} min`;
+  }
 
   const sendMessageMutation = useMutation({
     mutationFn: (text: string) => {
@@ -98,33 +129,29 @@ export default function Studio() {
   });
 
   const generateNextAITurn = async () => {
-    if (!currentEpisode || isGenerating) return;
+    if (!currentEpisode || isGenerating || isAiPaused) return;
 
     setIsGenerating(true);
     setRouterReasoning(null);
     try {
-      // First, route to next speaker
       const decision = await routeNextSpeaker({
         episodeId: currentEpisode.id,
         theme: currentEpisode.theme,
         debateHeat: 50,
       });
 
-      // Show router reasoning
       const speakerName = decision.nextSpeaker === "david"
         ? "David"
         : activeCharacters.find(c => c.id === decision.nextSpeaker)?.name || decision.nextSpeaker;
 
       setRouterReasoning(`Marcus selected ${speakerName} to ${decision.intent}: ${decision.reasoning}`);
 
-      // Then generate their response
       await generateAIResponse({
         characterId: decision.nextSpeaker,
         episodeId: currentEpisode.id,
         routerIntent: decision.intent,
       });
 
-      // Refresh turns
       queryClient.invalidateQueries({ queryKey: ["/api/episodes", currentEpisode.id, "turns"] });
 
       toast({
@@ -155,6 +182,27 @@ export default function Studio() {
     sendMessageMutation.mutate(message);
   };
 
+  // Actions Handler
+  const handleQuickAction = (actionId: string) => {
+    switch (actionId) {
+      case "toggle_pause":
+        setIsAiPaused(!isAiPaused);
+        toast({ title: isAiPaused ? "AI Resumed" : "AI Paused" });
+        break;
+      case "target_next":
+        toast({ title: "Targeting Mode", description: "Select next speaker (Coming soon)" });
+        break;
+      case "take_break":
+        sendMessageMutation.mutate("**ANNOUNCEMENT:** We are taking a short 5-minute break. Stay tuned!");
+        break;
+      case "quote_scripture":
+        setMessage(prev => prev + " As it is written in John 8:58...");
+        break;
+      default:
+        toast({ title: "Action Triggered", description: actionId });
+    }
+  };
+
   // Audio playback
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -163,11 +211,8 @@ export default function Studio() {
   useEffect(() => {
     if (turns.length > 0) {
       const lastTurn = turns[turns.length - 1];
-
-      // Check if it's a new turn and has audio
       if (lastTurn.id !== lastPlayedTurnIdRef.current && lastTurn.metadata && (lastTurn.metadata as any).audioUrl) {
         const audioUrl = (lastTurn.metadata as any).audioUrl;
-
         if (audioRef.current) {
           audioRef.current.src = audioUrl;
           audioRef.current.play().catch(e => console.error("Audio play failed:", e));
@@ -178,10 +223,9 @@ export default function Studio() {
     }
   }, [turns]);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [turns.length]); // Only scroll when message count changes
+  }, [turns.length]);
 
   if (loadingCharacters || loadingEpisodes) {
     return (
@@ -196,188 +240,140 @@ export default function Studio() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="p-8 text-center max-w-md">
           <h2 className="text-2xl font-bold mb-4">No Active Episode</h2>
-          <p className="text-muted-foreground mb-6">
-            Create an episode from the Control Panel to start a conversation.
-          </p>
-          <Link href="/control">
-            <Button>
-              <Settings className="mr-2 h-4 w-4" />
-              Go to Control Panel
-            </Button>
-          </Link>
+          <p className="text-muted-foreground mb-6">Create an episode from the Control Panel.</p>
+          <Link href="/control"><Button><Settings className="mr-2 h-4 w-4" /> Go to Control Panel</Button></Link>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="icon" data-testid="button-back-home">
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold" data-testid="text-studio-title">The Studio</h1>
-              <p className="text-sm text-muted-foreground" data-testid="text-episode-theme">{currentEpisode.theme}</p>
-            </div>
+      <header className="h-14 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-4 shrink-0 z-50">
+        <div className="flex items-center gap-4">
+          <Link href="/">
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-sm font-bold flex items-center gap-2">
+              Studio Pro <Badge variant="outline" className="text-[10px] h-4 px-1">BETA</Badge>
+            </h1>
+            <p className="text-xs text-muted-foreground truncate max-w-[300px]">{currentEpisode.theme}</p>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30" data-testid="badge-live">
-              <span className="mr-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
-              LIVE
-            </Badge>
-            <Link href="/control">
-              <Button variant="outline" data-testid="button-control-panel">
-                <Settings className="mr-2 h-4 w-4" />
-                Host Controls
-              </Button>
-            </Link>
-          </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" size="icon" className="h-8 w-8"
+            onClick={() => setShowLeftPanel(!showLeftPanel)}
+          >
+            <PanelLeftClose className={`h-4 w-4 ${!showLeftPanel && "rotate-180"}`} />
+          </Button>
+          <Button 
+            variant="ghost" size="icon" className="h-8 w-8"
+            onClick={() => setShowRightPanel(!showRightPanel)}
+          >
+            <PanelRightClose className={`h-4 w-4 ${!showRightPanel && "rotate-180"}`} />
+          </Button>
+          <div className="w-px h-4 bg-border mx-1" />
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+            <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            LIVE
+          </Badge>
+          <Link href="/control">
+            <Button variant="ghost" size="icon" className="h-8 w-8"><Settings className="h-4 w-4" /></Button>
+          </Link>
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* Conversation Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Router Reasoning Display */}
-          {routerReasoning && (
-            <div className="px-6 py-3 bg-primary/10 border-b border-primary/20">
-              <div className="max-w-4xl mx-auto flex items-start gap-2">
-                <Sparkles className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-primary" data-testid="text-router-reasoning">{routerReasoning}</p>
-              </div>
-            </div>
-          )}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel: Co-Pilot */}
+        {showLeftPanel && (
+          <div className="w-64 shrink-0 border-r border-border hidden md:block">
+            <AICoPilotPanel 
+              episodeStats={episodeStats}
+              suggestions={[
+                "Consider asking Elena about her skeptical view.",
+                "Pacing is good, but maybe pause for a break soon.",
+                "Viewers are asking about the 'I AM' concept."
+              ]}
+            />
+          </div>
+        )}
 
-          {/* Audio Status Indicator */}
-          {isPlaying && (
-            <div className="px-6 py-2 bg-indigo-900/30 border-b border-indigo-500/20 animate-pulse">
-              <div className="max-w-4xl mx-auto flex items-center gap-2 justify-center">
-                <div className="flex gap-1 items-end h-4">
-                  <div className="w-1 bg-primary h-2 animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                  <div className="w-1 bg-primary h-4 animate-bounce" style={{ animationDelay: "100ms" }}></div>
-                  <div className="w-1 bg-primary h-3 animate-bounce" style={{ animationDelay: "200ms" }}></div>
-                </div>
-                <p className="text-xs font-medium text-primary">Speaking...</p>
-              </div>
+        {/* Center Panel: Conversation */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Router Reasoning */}
+          {routerReasoning && (
+            <div className="px-4 py-2 bg-primary/5 border-b border-primary/10 flex items-center gap-2">
+              <Sparkles className="w-3 h-3 text-primary shrink-0" />
+              <p className="text-xs text-primary truncate">{routerReasoning}</p>
             </div>
           )}
 
           {/* Messages */}
-          <ScrollArea className="flex-1 p-6">
-            <div className="max-w-4xl mx-auto space-y-4">
-              {loadingTurns ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : turns.length === 0 ? (
-                <div className="text-center py-12">
-                  <Sparkles className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
-                </div>
-              ) : (
-                <>
-                  {turns.map((turn) => {
-                    const isHost = turn.speaker === "david";
-                    const character = activeCharacters.find(c => c.id === turn.speaker);
-                    const displayName = isHost ? "David Trinidad" : character?.name || turn.speaker;
-                    const avatarUrl = turn.speaker !== "david" ? avatarMap[turn.speaker] : null;
+          <ScrollArea className="flex-1 p-4">
+            <div className="max-w-3xl mx-auto space-y-4">
+              {turns.map((turn) => {
+                const isHost = turn.speaker === "david";
+                const character = activeCharacters.find(c => c.id === turn.speaker);
+                const displayName = isHost ? "David Trinidad" : character?.name || turn.speaker;
+                const avatarUrl = turn.speaker !== "david" ? avatarMap[turn.speaker] : null;
 
-                    return (
-                      <div
-                        key={turn.id}
-                        className={`flex gap-4 ${isHost ? "flex-row-reverse" : "flex-row"}`}
-                        data-testid={`message-${turn.id}`}
-                      >
-                        {/* Avatar */}
-                        <div className="flex-shrink-0">
-                          {avatarUrl ? (
-                            <img
-                              src={avatarUrl}
-                              alt={displayName}
-                              className="w-10 h-10 rounded-full object-cover border-2"
-                              style={{
-                                borderColor: character?.auraColor || "hsl(var(--primary))",
-                              }}
-                            />
-                          ) : (
-                            <div
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2"
-                              style={{
-                                borderColor: "hsl(280, 70%, 65%)",
-                                backgroundColor: "hsl(280, 70%, 20%)",
-                              }}
-                            >
-                              DT
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Message Bubble */}
-                        <div className={`flex-1 max-w-2xl ${isHost ? "text-right" : "text-left"}`}>
-                          <div className="flex items-baseline gap-2 mb-1">
-                            <span className={`text-sm font-semibold ${isHost ? "order-2" : "order-1"}`}>
-                              {displayName}
-                            </span>
-                            <span className={`text-xs text-muted-foreground ${isHost ? "order-1" : "order-2"}`}>
-                              {new Date(turn.timestamp).toLocaleTimeString()}
-                            </span>
-                          </div>
-                          <div
-                            className={`inline-block px-4 py-3 rounded-lg ${isHost
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-card border border-border"
-                              }`}
-                          >
-                            <p className="whitespace-pre-wrap">{turn.text}</p>
-                          </div>
-                        </div>
+                return (
+                  <div key={turn.id} className={`flex gap-3 ${isHost ? "flex-row-reverse" : "flex-row"}`}>
+                    <div className="shrink-0">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover border ring-1 ring-border" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary border ring-1 ring-border">DT</div>
+                      )}
+                    </div>
+                    <div className={`flex-1 max-w-xl ${isHost ? "text-right" : "text-left"}`}>
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="text-xs font-semibold opacity-70">{displayName}</span>
+                        <span className="text-[10px] text-muted-foreground opacity-50">{new Date(turn.timestamp).toLocaleTimeString()}</span>
                       </div>
-                    );
-                  })}
-                  <div ref={messagesEndRef} />
-                </>
-              )}
+                      <div className={`inline-block px-4 py-2 rounded-2xl text-sm ${isHost ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-card border border-border rounded-tl-sm"}`}>
+                        <p className="whitespace-pre-wrap leading-relaxed">{turn.text}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
 
-          {/* Input Area */}
-          <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
-            <div className="max-w-4xl mx-auto space-y-3">
-              {/* AI Generate Button */}
-              <div className="flex justify-center">
-                <Button
-                  onClick={generateNextAITurn}
-                  disabled={isGenerating}
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  data-testid="button-generate-ai"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      Generate Next AI Response
-                    </>
-                  )}
-                </Button>
+          {/* Input & Controls */}
+          <div className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            {/* Quick Actions Bar */}
+            <QuickActions onAction={handleQuickAction} isAiPaused={isAiPaused} />
+            
+            <div className="p-4 max-w-4xl mx-auto w-full space-y-3">
+              <div className="flex items-center gap-2 mb-2">
+                <MessageTemplates onSelect={(text) => setMessage(text)} />
+                <div className="flex-1" />
+                {!isAiPaused && (
+                  <Button
+                    onClick={generateNextAITurn}
+                    disabled={isGenerating}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-1.5"
+                  >
+                    {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    {isGenerating ? "Thinking..." : "Generate AI"}
+                  </Button>
+                )}
               </div>
-
-              {/* David's Input */}
-              <div className="flex gap-2">
+              
+              <div className="relative flex gap-2">
                 <Textarea
-                  placeholder="Enter your message as David..."
+                  placeholder="Enter message..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={(e) => {
@@ -386,16 +382,14 @@ export default function Studio() {
                       handleSendMessage();
                     }
                   }}
-                  className="resize-none"
+                  className="min-h-[50px] resize-none pr-12"
                   rows={2}
-                  data-testid="input-message"
                 />
                 <Button
                   onClick={handleSendMessage}
                   disabled={!message.trim() || sendMessageMutation.isPending}
                   size="icon"
-                  className="h-full"
-                  data-testid="button-send"
+                  className="absolute right-2 bottom-2 h-8 w-8"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
@@ -404,59 +398,44 @@ export default function Studio() {
           </div>
         </div>
 
-        {/* Participants Sidebar */}
-        <div className="lg:w-80 border-l border-border bg-card/30 p-6">
-          <h3 className="text-lg font-semibold mb-4">Active Participants</h3>
-          <div className="space-y-4">
-            {/* David */}
-            <div className="flex items-center gap-3" data-testid="participant-david">
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold border-2"
-                style={{
-                  borderColor: "hsl(280, 70%, 65%)",
-                  backgroundColor: "hsl(280, 70%, 20%)",
-                }}
-              >
-                DT
-              </div>
-              <div>
-                <p className="font-semibold">David Trinidad</p>
-                <p className="text-xs text-muted-foreground">Host</p>
-              </div>
+        {/* Right Panel: Monitor & Participants */}
+        {showRightPanel && (
+          <div className="w-80 shrink-0 border-l border-border flex flex-col hidden lg:flex bg-card/10">
+            <div className="h-1/2 border-b border-border overflow-hidden">
+              <ChatMonitorPanel onAddressAlert={(text) => setMessage(prev => prev + " " + text)} />
             </div>
-
-            {/* AI Participants */}
-            {activeCharacters.map((character) => (
-              <div
-                key={character.id}
-                className="flex items-center gap-3"
-                data-testid={`participant-${character.id}`}
-              >
-                <img
-                  src={avatarMap[character.id]}
-                  alt={character.name}
-                  className="w-12 h-12 rounded-full object-cover border-2"
-                  style={{
-                    borderColor: character.auraColor,
-                  }}
-                />
-                <div>
-                  <p className="font-semibold">{character.name}</p>
-                  <p className="text-xs text-muted-foreground">{character.role}</p>
-                </div>
+            <div className="h-1/2 flex flex-col">
+              <div className="p-3 border-b border-border bg-card/30">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Participants</h3>
               </div>
-            ))}
+              <ScrollArea className="flex-1">
+                <div className="p-3 space-y-2">
+                   <div className="flex items-center gap-2 p-2 rounded hover:bg-card/50 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">DT</div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">David Trinidad</p>
+                      <p className="text-xs text-muted-foreground">Host</p>
+                    </div>
+                    <Badge variant="secondary" className="ml-auto text-[10px] h-5">Host</Badge>
+                  </div>
+                  
+                  {activeCharacters.map((character) => (
+                    <div key={character.id} className="flex items-center gap-2 p-2 rounded hover:bg-card/50 transition-colors">
+                      <img src={avatarMap[character.id]} alt={character.name} className="w-8 h-8 rounded-full object-cover" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{character.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{character.role}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Hidden Audio Element */}
-      <audio
-        ref={audioRef}
-        onEnded={() => setIsPlaying(false)}
-        onPause={() => setIsPlaying(false)}
-        className="hidden"
-      />
+      <audio ref={audioRef} className="hidden" />
     </div>
   );
 }
