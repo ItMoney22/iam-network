@@ -98,6 +98,92 @@ router.post("/api/zero/chat", async (req, res) => {
             tool_choice: "auto",
         });
 
+        const responseMessage = completion.choices[0].message;
+        let finalContent = responseMessage.content || "";
+
+        // 3. Handle Tool Calls
+        if (responseMessage.tool_calls) {
+            for (const toolCall of responseMessage.tool_calls) {
+                // Type assertion to access function property
+                const fn = (toolCall as any).function;
+                const fnName = fn.name;
+                const args = JSON.parse(fn.arguments);
+
+                if (fnName === "save_memory") {
+                    await db.insert(memories).values({
+                        type: args.type,
+                        content: args.content,
+                        tags: args.tags || [],
+                    });
+                    finalContent += `\n(I've saved that to my memory.)`;
+                } else if (fnName === "search_memories") {
+                    // Simple keyword search for now (can upgrade to vector search later)
+                    const results = await db
+                        .select()
+                        .from(memories)
+                        .where(like(memories.content, `%${args.query}%`))
+                        .limit(5);
+
+                    if (results.length > 0) {
+                        const context = results.map((r) => `- [${r.type}] ${r.content}`).join("\n");
+
+                        // Ask LLM again with the context
+                        const followUp = await openai.chat.completions.create({
+                            model: "gpt-4o",
+                            messages: [
+                                ...messages as any,
+                                responseMessage,
+                                {
+                                    role: "tool",
+                                    tool_call_id: toolCall.id,
+                                    content: JSON.stringify(results),
+                                },
+                                {
+                                    role: "system",
+                                    content: `Found these memories. Incorporate them into your answer: \n${context}`,
+                                }
+                            ],
+                        });
+                        finalContent = followUp.choices[0].message.content || "";
+                    } else {
+                        // Ask LLM again with empty result
+                        const followUp = await openai.chat.completions.create({
+                            model: "gpt-4o",
+                            messages: [
+                                ...messages as any,
+                                responseMessage,
+                                {
+                                    role: "tool",
+                                    tool_call_id: toolCall.id,
+                                    content: "No memories found.",
+                                }
+                            ],
+                        });
+                        finalContent = followUp.choices[0].message.content || "";
+                    }
+                }
+            }
+        }
+
+        // 4. Generate Audio (TTS)
+        let audioUrl = null;
+        if (finalContent) {
+            try {
+                // Use Zero's voice ID (male-01)
+                const audioBuffer = await ttsService.generateSpeech(finalContent, "male-01");
+                audioUrl = await gcsService.uploadAudio(audioBuffer);
+            } catch (ttsError) {
+                console.error("TTS Error:", ttsError);
+                // Don't fail the whole request if TTS fails
+            }
+        }
+
+        res.json({
+            role: "assistant",
+            content: finalContent,
+            audioUrl: audioUrl,
+        });
+
     } catch (error) {
         console.error("Error in Zero Chat:", error);
         res.status(500).json({ error: "Failed to process chat" });
