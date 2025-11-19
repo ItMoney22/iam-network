@@ -51,10 +51,20 @@ export default function ZeroChat() {
   // Chat Mutation
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
-      const res = await apiRequest("POST", "/api/zero/chat", {
-        message,
-        history: messages.slice(-5), // Send last 5 messages for context
-      });
+      // Construct the messages array for the backend
+      const currentHistory = messages.slice(-5).map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      const payload = {
+        messages: [
+          ...currentHistory,
+          { role: "user", content: message }
+        ]
+      };
+
+      const res = await apiRequest("POST", "/api/zero/chat", payload);
       return res.json();
     },
     onSuccess: (data) => {
