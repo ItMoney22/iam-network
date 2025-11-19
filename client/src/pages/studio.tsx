@@ -27,6 +27,8 @@ import { AICoPilotPanel } from "@/components/studio/AICoPilotPanel";
 import { PersonalityControls } from "@/components/studio/PersonalityControls";
 import { DirectorMode } from "@/components/studio/DirectorMode";
 import { PollManager } from "@/components/studio/PollManager";
+import { ClipManager } from "@/components/studio/ClipManager";
+import { ShowOutline } from "@/components/studio/ShowOutline";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import marcusAvatar from "@/assets/generated_images/Marcus_wise_director_portrait_sv5sm1qh.png";
@@ -60,9 +62,19 @@ export default function Studio() {
   const [isAiPaused, setIsAiPaused] = useState(false);
   const [showLeftPanel, setShowLeftPanel] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Timer effect
+  useEffect(() => {
+    // In a real app, fetch start time from server to sync
+    const timer = setInterval(() => {
+      setElapsedSeconds(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const { data: activeCharacters = [], isLoading: loadingCharacters } = useQuery({
     queryKey: ["/api/characters/active"],
@@ -407,12 +419,14 @@ export default function Studio() {
           <div className="w-80 shrink-0 border-l border-border flex flex-col hidden lg:flex bg-card/10">
             <Tabs defaultValue="chat" className="flex-1 flex flex-col">
               <div className="px-2 pt-2">
-                <TabsList className="w-full grid grid-cols-5 h-8">
-                  <TabsTrigger value="chat" className="text-xs px-0">Chat</TabsTrigger>
-                  <TabsTrigger value="polls" className="text-xs px-0">Polls</TabsTrigger>
-                  <TabsTrigger value="people" className="text-xs px-0">People</TabsTrigger>
-                  <TabsTrigger value="director" className="text-xs px-0">Direct</TabsTrigger>
-                  <TabsTrigger value="tuner" className="text-xs px-0">Tune</TabsTrigger>
+                <TabsList className="w-full grid grid-cols-7 h-8">
+                  <TabsTrigger value="chat" className="text-xs px-0" title="Chat Monitor">Chat</TabsTrigger>
+                  <TabsTrigger value="polls" className="text-xs px-0" title="Polls">Poll</TabsTrigger>
+                  <TabsTrigger value="clips" className="text-xs px-0" title="Clips">Clip</TabsTrigger>
+                  <TabsTrigger value="outline" className="text-xs px-0" title="Outline">Plan</TabsTrigger>
+                  <TabsTrigger value="people" className="text-xs px-0" title="Participants">Ppl</TabsTrigger>
+                  <TabsTrigger value="director" className="text-xs px-0" title="Director Mode">Dir</TabsTrigger>
+                  <TabsTrigger value="tuner" className="text-xs px-0" title="Personality Tuner">Tune</TabsTrigger>
                 </TabsList>
               </div>
 
@@ -422,6 +436,14 @@ export default function Studio() {
 
               <TabsContent value="polls" className="flex-1 overflow-hidden mt-0 border-none data-[state=active]:flex flex-col">
                 <PollManager episodeId={currentEpisode.id} />
+              </TabsContent>
+
+              <TabsContent value="clips" className="flex-1 overflow-hidden mt-0 border-none data-[state=active]:flex flex-col">
+                <ClipManager episodeId={currentEpisode.id} elapsedSeconds={elapsedSeconds} />
+              </TabsContent>
+
+              <TabsContent value="outline" className="flex-1 overflow-hidden mt-0 border-none data-[state=active]:flex flex-col">
+                <ShowOutline episodeId={currentEpisode.id} theme={currentEpisode.theme} />
               </TabsContent>
 
               <TabsContent value="people" className="flex-1 overflow-hidden mt-0 border-none data-[state=active]:flex flex-col">
