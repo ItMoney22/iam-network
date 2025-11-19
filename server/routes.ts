@@ -14,6 +14,8 @@ import { registerImageRoutes } from "../backend/routes/images";
 import { registerBrowserSourceRoutes } from "./routes/browserSource";
 import { chatAggregator } from "./services/chatAggregator";
 
+import { registerZeroAssistantRoutes } from "./routes/zero-assistant";
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize data on startup
   await initializeData();
@@ -29,6 +31,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register Zero AI routes (voice + chat)
   registerZeroRoutes(app);
+
+  // Register Zero Personal Assistant (Second Brain)
+  registerZeroAssistantRoutes(app);
 
   // Register image generation routes (Replicate)
   registerImageRoutes(app);

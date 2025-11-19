@@ -204,3 +204,20 @@ export const episodeClipsRelations = relations(episodeClips, ({ one }) => ({
     references: [episodes.id],
   }),
 }));
+// Memories - Zero's "Second Brain" for storing dynamic information
+export const memories = pgTable("memories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: varchar("type", { length: 20 }).notNull(), // 'episode', 'guest', 'general'
+  content: text("content").notNull(),
+  tags: text("tags").array(), // For filtering
+  embedding: jsonb("embedding"), // Vector embedding for semantic search
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertMemorySchema = createInsertSchema(memories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Memory = typeof memories.$inferSelect;
+export type InsertMemory = z.infer<typeof insertMemorySchema>;
