@@ -94,6 +94,30 @@ export async function seedKnowledgeBase() {
       metadata: { chapter: 3, page: 24 },
     },
     {
+      source: "book" as const,
+      content: "The illusion of separation is the root of all suffering. We believe we are isolated individuals fighting for survival, but in truth, we are waves in the same ocean of consciousness.",
+      reference: "Chapter 4: The Illusion of Separation",
+      metadata: { chapter: 4, page: 45 },
+    },
+    {
+      source: "book" as const,
+      content: "To awaken is to shift from 'I am this body' to 'I am the awareness observing this body.' This shift changes everything. It is the difference between being a character in a movie and being the screen on which it plays.",
+      reference: "Chapter 5: Awakening Awareness",
+      metadata: { chapter: 5, page: 67 },
+    },
+    {
+      source: "book" as const,
+      content: "Love is not a commandment to follow but the natural state of unified consciousness. When we remember we are all I AM, love becomes automatic because there is no 'other' to fear or hate.",
+      reference: "Chapter 7: Love Without Division",
+      metadata: { chapter: 7, page: 89 },
+    },
+    {
+      source: "book" as const,
+      content: "Prayer is not asking a distant God for favors; it is aligning your frequency with the I AM presence that already knows your needs. It is a tuning fork for the soul.",
+      reference: "Chapter 8: The Frequency of Prayer",
+      metadata: { chapter: 8, page: 102 },
+    },
+    {
       source: "bible" as const,
       content: "And God said unto Moses, I AM THAT I AM: and he said, Thus shalt thou say unto the children of Israel, I AM hath sent me unto you.",
       reference: "Exodus 3:14 (KJV)",
@@ -112,10 +136,16 @@ export async function seedKnowledgeBase() {
       metadata: { book: "John", chapter: 14, verse: 6 },
     },
     {
-      source: "book" as const,
-      content: "Love is not a commandment to follow but the natural state of unified consciousness. When we remember we are all I AM, love becomes automatic because there is no 'other' to fear or hate.",
-      reference: "Chapter 7: Love Without Division",
-      metadata: { chapter: 7, page: 89 },
+      source: "bible" as const,
+      content: "Be still, and know that I am God: I will be exalted among the heathen, I will be exalted in the earth.",
+      reference: "Psalm 46:10 (KJV)",
+      metadata: { book: "Psalms", chapter: 46, verse: 10 },
+    },
+    {
+      source: "bible" as const,
+      content: "For in him we live, and move, and have our being; as certain also of your own poets have said, For we are also his offspring.",
+      reference: "Acts 17:28 (KJV)",
+      metadata: { book: "Acts", chapter: 17, verse: 28 },
     },
   ];
 

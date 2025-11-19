@@ -20,7 +20,7 @@ interface PlatformStatus {
 }
 
 const PlatformIcon = ({ platform, status }: { platform: 'kick' | 'twitch' | 'tiktok'; status: string }) => {
-  const iconClass = `w-5 h-5 ${status === 'connected' ? 'opacity-100' : 'opacity-40'}`;
+  const iconClass = `w-6 h-6 drop-shadow-lg ${status === 'connected' ? 'opacity-100' : 'opacity-60 grayscale'}`;
 
   switch (platform) {
     case 'kick':
@@ -33,44 +33,40 @@ const PlatformIcon = ({ platform, status }: { platform: 'kick' | 'twitch' | 'tik
 };
 
 const ChatMessageComponent = ({ message }: { message: ChatMessage }) => {
-  const platformColors = {
-    kick: 'border-l-green-500',
-    twitch: 'border-l-purple-500',
-    tiktok: 'border-l-pink-500'
-  };
-
-  const platformBg = {
-    kick: 'bg-green-500/10',
-    twitch: 'bg-purple-500/10',
-    tiktok: 'bg-pink-500/10'
-  };
-
   return (
     <motion.div
-      initial={{ opacity: 0, x: -20, scale: 0.95 }}
+      initial={{ opacity: 0, x: -50, scale: 0.9 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 20, scale: 0.95 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className={`flex items-start gap-3 p-3 mb-2 rounded-lg border-l-4 ${platformColors[message.platform]} ${platformBg[message.platform]} backdrop-blur-sm bg-gray-900/80`}
+      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="flex items-start gap-4 mb-4 relative group"
     >
-      <div className="flex-shrink-0 mt-1">
-        <PlatformIcon platform={message.platform} status="connected" />
-      </div>
+      {/* Platform Indicator Line */}
+      <div
+        className={`absolute left-0 top-2 bottom-2 w-1 rounded-full opacity-80 shadow-[0_0_10px_rgba(255,255,255,0.3)]`}
+        style={{
+          backgroundColor: message.platform === 'kick' ? '#53FC18' : message.platform === 'twitch' ? '#9147FF' : '#FF0050'
+        }}
+      />
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2 mb-1">
+      <div className="pl-4 flex-1">
+        <div className="flex items-center gap-2 mb-1">
+          <PlatformIcon platform={message.platform} status="connected" />
           <span
-            className="font-bold text-sm truncate"
-            style={{ color: message.color || '#FFFFFF' }}
+            className="font-black text-xl tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+            style={{
+              color: message.color || '#FFFFFF',
+              textShadow: '0 0 20px rgba(0,0,0,0.5)'
+            }}
           >
             {message.username}
           </span>
           {message.badges && message.badges.length > 0 && (
-            <div className="flex gap-1">
-              {message.badges.slice(0, 3).map((badge, idx) => (
+            <div className="flex gap-1 ml-2">
+              {message.badges.slice(0, 2).map((badge, idx) => (
                 <span
                   key={idx}
-                  className="text-xs px-1.5 py-0.5 rounded bg-gray-700/50 text-gray-300"
+                  className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/80 border border-white/20 backdrop-blur-sm"
                 >
                   {badge}
                 </span>
@@ -78,9 +74,13 @@ const ChatMessageComponent = ({ message }: { message: ChatMessage }) => {
             </div>
           )}
         </div>
-        <p className="text-white text-sm leading-relaxed break-words">
-          {message.message}
-        </p>
+
+        <div className="relative">
+          <div className="absolute inset-0 bg-black/40 blur-xl rounded-lg -z-10" />
+          <p className="text-white text-2xl font-bold leading-snug drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]" style={{ textShadow: '0 0 10px rgba(0,0,0,0.5)' }}>
+            {message.message}
+          </p>
+        </div>
       </div>
     </motion.div>
   );
@@ -93,37 +93,20 @@ export default function BrowserSourceChat() {
     twitch: 'disconnected',
     tiktok: 'disconnected'
   });
-  const [isConnected, setIsConnected] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const maxMessages = 8;
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const maxMessages = 7; // Keep fewer messages for cleaner stream look
 
   const connectWebSocket = () => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      return;
-    }
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws/chat`;
-
-    console.log('[BrowserSource] Connecting to WebSocket:', wsUrl);
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log('[BrowserSource] WebSocket connected');
-      setIsConnected(true);
-
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
@@ -139,11 +122,7 @@ export default function BrowserSourceChat() {
             ...data.message,
             timestamp: new Date(data.message.timestamp)
           };
-
-          setMessages((prev) => {
-            const updated = [newMessage, ...prev];
-            return updated.slice(0, maxMessages);
-          });
+          setMessages((prev) => [newMessage, ...prev].slice(0, maxMessages));
         } else if (data.type === 'history') {
           const historyMessages = data.messages.map((msg: any) => ({
             ...msg,
@@ -154,99 +133,40 @@ export default function BrowserSourceChat() {
           setPlatformStatus(data.status);
         }
       } catch (error) {
-        console.error('[BrowserSource] Error parsing WebSocket message:', error);
+        console.error('Error parsing WebSocket message:', error);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('[BrowserSource] WebSocket error:', error);
-      setIsConnected(false);
-    };
-
     ws.onclose = () => {
-      console.log('[BrowserSource] WebSocket disconnected');
-      setIsConnected(false);
       wsRef.current = null;
-
-      reconnectTimeoutRef.current = setTimeout(() => {
-        console.log('[BrowserSource] Attempting to reconnect...');
-        connectWebSocket();
-      }, 3000);
+      reconnectTimeoutRef.current = setTimeout(connectWebSocket, 3000);
     };
   };
 
   useEffect(() => {
     connectWebSocket();
-
     return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      wsRef.current?.close();
     };
   }, []);
 
   return (
-    <div className="w-full h-screen overflow-hidden bg-transparent">
-      <div className="max-w-2xl mx-auto h-full flex flex-col p-4">
-        <div className="flex items-center justify-between mb-3 px-3 py-2 bg-gray-900/60 backdrop-blur-sm rounded-lg border border-purple-500/20">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-            <span className="text-xs text-gray-300 font-medium">
-              {isConnected ? 'Live Chat' : 'Connecting...'}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <PlatformIcon platform="kick" status={platformStatus.kick} />
-            <PlatformIcon platform="twitch" status={platformStatus.twitch} />
-            <PlatformIcon platform="tiktok" status={platformStatus.tiktok} />
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-transparent">
-          <AnimatePresence initial={false}>
-            {messages.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center justify-center h-full"
-              >
-                <div className="text-center text-gray-500">
-                  <p className="text-sm">Waiting for messages...</p>
-                  <p className="text-xs mt-2">Messages from Kick, Twitch, and TikTok will appear here</p>
-                </div>
-              </motion.div>
-            ) : (
-              messages.map((message) => (
-                <ChatMessageComponent key={message.id} message={message} />
-              ))
-            )}
-          </AnimatePresence>
-          <div ref={messagesEndRef} />
-        </div>
+    <div className="w-full h-screen overflow-hidden bg-transparent p-8 flex flex-col justify-end pb-12">
+      {/* Status Indicators (Only visible if disconnected or error) */}
+      <div className="fixed top-4 right-4 flex gap-2 opacity-0 hover:opacity-100 transition-opacity duration-500">
+        <PlatformIcon platform="kick" status={platformStatus.kick} />
+        <PlatformIcon platform="twitch" status={platformStatus.twitch} />
+        <PlatformIcon platform="tiktok" status={platformStatus.tiktok} />
       </div>
 
-      <style>{`
-        .scrollbar-thin::-webkit-scrollbar {
-          width: 6px;
-        }
-
-        .scrollbar-thin::-webkit-scrollbar-track {
-          background: transparent;
-        }
-
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-          background: rgba(168, 85, 247, 0.5);
-          border-radius: 3px;
-        }
-
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-          background: rgba(168, 85, 247, 0.7);
-        }
-      `}</style>
+      <div className="w-full max-w-[600px]">
+        <AnimatePresence initial={false} mode='popLayout'>
+          {messages.map((message) => (
+            <ChatMessageComponent key={message.id} message={message} />
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
