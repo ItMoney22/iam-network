@@ -17,10 +17,10 @@ export interface LLMRequest {
 
 export async function generateLLMResponse(request: LLMRequest): Promise<string> {
   const { character, messages, context } = request;
-  
+
   // Build system prompt with character personality
   const systemPrompt = buildSystemPrompt(character, context);
-  
+
   // Prepend system message
   const fullMessages: ConversationMessage[] = [
     { role: "system", content: systemPrompt },
@@ -81,6 +81,13 @@ HIERARCHY:
 - David is always the Host and has ultimate authority
 - Zero is the Director/Router who controls conversation flow
 - You are a guest in this dialogue
+
+AUDIO-FIRST INSTRUCTIONS:
+- You are speaking, not writing. Keep responses concise and conversational.
+- Use natural interjections (e.g., "Hmm," "I see," "Well") where appropriate.
+- Avoid long monologues. Break up your thoughts.
+- DO NOT use markdown formatting (bold, italics, lists) as it will be read aloud.
+- Speak with emotion and conviction matching your personality.
 
 Remember: This isn't preaching. This is awakening through honest inquiry.`;
 

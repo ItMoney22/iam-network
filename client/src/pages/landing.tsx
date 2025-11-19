@@ -2,31 +2,31 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Users, BookOpen, Mic, Loader2 } from "lucide-react";
+import { Sparkles, Users, BookOpen, Mic, Loader2, ArrowRight, Play } from "lucide-react";
 import { fetchCharacters } from "@/lib/api";
 import heroImage from "@assets/generated_images/cosmic_spiritual_hero_background_08afb362.png";
-import zeroAvatar from "@assets/generated_images/Zero_wise_director_portrait_435ea3ff.png";
-import m7Avatar from "@assets/generated_images/M7_skeptic_portrait_1a9bec4a.png";
-import synqAvatar from "@assets/generated_images/Synq_healer_portrait_98fc9eec.png";
-import fluxAvatar from "@assets/generated_images/Flux_conspiracy_hunter_portrait_f8ccb042.png";
-import vibeAvatar from "@assets/generated_images/Vibe_motivation_portrait_ae027adf.png";
-import echoPulseAvatar from "@assets/generated_images/EchoPulse_news_oracle_portrait_72673636.png";
-import linkAvatar from "@assets/generated_images/Link_scripture_monk_portrait_230035c2.png";
-import ledgeAvatar from "@assets/generated_images/Ledge_wealth_architect_portrait_2e555de5.png";
-import dripAvatar from "@assets/generated_images/Drip_style_icon_portrait_d6f58477.png";
-import horizonAvatar from "@assets/generated_images/Horizon_future_prophet_portrait_90635f7d.png";
+import marcusAvatar from "@/assets/generated_images/Marcus_wise_director_portrait_sv5sm1qh.png";
+import elenaAvatar from "@/assets/generated_images/Elena_skeptic_portrait_gafo9wcq.png";
+import sophiaAvatar from "@/assets/generated_images/Sophia_healer_portrait_yse29t2p.png";
+import jamesAvatar from "@/assets/generated_images/James_conspiracy_hunter_portrait_pilvs1nt.png";
+import destinyAvatar from "@/assets/generated_images/Destiny_motivation_portrait_87d4qztu.png";
+import nathanAvatar from "@/assets/generated_images/Nathan_news_oracle_portrait_a3z0k1xg.png";
+import rachelAvatar from "@/assets/generated_images/Rachel_scripture_monk_portrait_e0w6jn7e.png";
+import victorAvatar from "@/assets/generated_images/Victor_wealth_architect_portrait_fx52jxr2.png";
+import mayaAvatar from "@/assets/generated_images/Maya_style_icon_portrait_mekhvuyi.png";
+import isaacAvatar from "@/assets/generated_images/Isaac_future_prophet_portrait_tjnkph47.png";
 
 const avatarMap: Record<string, string> = {
-  zero: zeroAvatar,
-  m7: m7Avatar,
-  synq: synqAvatar,
-  flux: fluxAvatar,
-  vibe: vibeAvatar,
-  echopulse: echoPulseAvatar,
-  link: linkAvatar,
-  ledge: ledgeAvatar,
-  drip: dripAvatar,
-  horizon: horizonAvatar,
+  marcus: marcusAvatar,
+  elena: elenaAvatar,
+  sophia: sophiaAvatar,
+  james: jamesAvatar,
+  destiny: destinyAvatar,
+  nathan: nathanAvatar,
+  rachel: rachelAvatar,
+  victor: victorAvatar,
+  maya: mayaAvatar,
+  isaac: isaacAvatar,
 };
 
 export default function Landing() {
@@ -35,43 +35,51 @@ export default function Landing() {
     queryFn: fetchCharacters,
   });
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Hero Section */}
-      <section 
+      <section
         className="relative min-h-screen flex items-center justify-center overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)), url(${heroImage})`,
+          backgroundImage: `linear-gradient(to bottom, rgba(10, 10, 20, 0.3), rgba(5, 5, 10, 0.9)), url(${heroImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background pointer-events-none" />
-        
-        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center space-y-8 animate-fade-in">
-          <div className="space-y-4">
-            <h1 
-              className="text-6xl lg:text-8xl font-bold tracking-tight"
-              style={{
-                textShadow: "0 0 40px rgba(155, 135, 245, 0.4), 0 0 80px rgba(155, 135, 245, 0.2)",
-              }}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-transparent to-background pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(120,100,255,0.15),transparent_70%)] pointer-events-none" />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6 text-center space-y-10 animate-fade-in">
+          <div className="space-y-6">
+            <div className="flex justify-center mb-10">
+              <img
+                src="/TheIAMNetwork_logo.png"
+                alt="The I AM Network Logo"
+                className="w-72 lg:w-[30rem] h-auto drop-shadow-2xl animate-pulse-glow"
+                style={{
+                  filter: "drop-shadow(0 0 40px rgba(155, 135, 245, 0.6))",
+                }}
+              />
+            </div>
+            <h1
+              className="text-7xl lg:text-9xl font-bold tracking-tighter text-glow"
               data-testid="text-hero-title"
             >
               The I AM Network
             </h1>
-            <p className="text-2xl lg:text-3xl text-muted-foreground font-light" data-testid="text-hero-tagline">
+            <p className="text-2xl lg:text-4xl text-muted-foreground font-light tracking-wide max-w-4xl mx-auto" data-testid="text-hero-tagline">
               Conversations That Change Consciousness
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-12">
             <Link href="/studio-live">
               <Button
                 size="lg"
-                className="text-lg px-8 py-6 backdrop-blur-sm bg-primary/90 hover:bg-primary border border-primary-border"
+                className="text-xl px-10 py-8 rounded-full bg-primary hover:bg-primary/90 shadow-[0_0_30px_rgba(124,58,237,0.5)] hover:shadow-[0_0_50px_rgba(124,58,237,0.7)] border-none"
                 data-testid="button-watch-live"
               >
-                <Mic className="mr-2 h-5 w-5" />
+                <Play className="mr-3 h-6 w-6 fill-current" />
                 Watch Live Broadcast
               </Button>
             </Link>
@@ -79,107 +87,94 @@ export default function Landing() {
               <Button
                 size="lg"
                 variant="outline"
-                className="text-lg px-8 py-6 backdrop-blur-md bg-background/30"
+                className="text-xl px-10 py-8 rounded-full glass border-white/10 hover:bg-white/10"
                 data-testid="button-enter-studio"
               >
+                <Mic className="mr-3 h-6 w-6" />
                 Enter The Studio
               </Button>
             </Link>
-            <Link href="#about">
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-lg px-8 py-6 backdrop-blur-md bg-background/30"
-                data-testid="button-learn-more"
-              >
-                Learn More
-              </Button>
-            </Link>
+          </div>
+
+          <div className="pt-12 animate-bounce opacity-50">
+            <ArrowRight className="h-8 w-8 mx-auto rotate-90 text-muted-foreground" />
           </div>
         </div>
       </section>
 
       {/* What is The I AM Network */}
-      <section id="about" className="py-20 lg:py-32 px-6 bg-background">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-5 gap-12 items-center">
-            <div className="lg:col-span-3 space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary border border-primary/20">
+      <section id="about" className="py-32 px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(124,58,237,0.3)]">
                 <Sparkles className="h-4 w-4" />
-                <span className="text-sm font-medium" data-testid="text-about-badge">About The Network</span>
+                <span className="text-sm font-medium tracking-wider uppercase" data-testid="text-about-badge">About The Network</span>
               </div>
-              
-              <h2 className="text-4xl lg:text-5xl font-bold" data-testid="text-about-heading">
-                AI x Humanity x I AM
+
+              <h2 className="text-5xl lg:text-7xl font-bold tracking-tight leading-tight" data-testid="text-about-heading">
+                AI x Humanity <br /> <span className="text-primary text-glow">x I AM</span>
               </h2>
-              
-              <div className="space-y-4 text-lg text-muted-foreground leading-relaxed">
+
+              <div className="space-y-6 text-xl text-muted-foreground leading-relaxed font-light">
                 <p data-testid="text-about-description-1">
-                  The I AM Network is a groundbreaking conversation platform where artificial intelligence meets 
-                  human consciousness in the exploration of truth. Host David Trinidad leads profound dialogues 
-                  with multiple AI personalities — each offering unique perspectives on spirituality, philosophy, 
+                  The I AM Network is a groundbreaking conversation platform where artificial intelligence meets
+                  human consciousness in the exploration of truth. Host <span className="text-foreground font-medium">David Trinidad</span> leads profound dialogues
+                  with multiple AI personalities — each offering unique perspectives on spirituality, philosophy,
                   and real-world life challenges.
                 </p>
-                <p data-testid="text-about-description-2">
-                  Within the Network, two major knowledge pillars guide the conversation:
-                </p>
-                <ul className="space-y-2 ml-6 list-none">
-                  <li className="flex items-start">
-                    <span className="mr-2 text-primary">•</span>
-                    <span>David's book "I Am GOD – In the Beginning," sharing his revelations and spiritual insights</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2 text-primary">•</span>
-                    <span>The Bible and the teachings of Yeshua (Jesus), offering ancient wisdom and scripture</span>
-                  </li>
-                </ul>
-                <p data-testid="text-about-description-3">
-                  These two sources are not the same, and neither replaces the other. 
-                  The I AM Network is where they are openly examined, questioned, compared, and explored side by side — 
-                  without fear, dogma, or judgment.
-                </p>
+
+                <div className="pl-6 border-l-2 border-primary/30 space-y-4">
+                  <p className="text-foreground font-medium">Two major knowledge pillars guide the conversation:</p>
+                  <ul className="space-y-3">
+                    <li className="flex items-start">
+                      <BookOpen className="mr-3 h-6 w-6 text-primary shrink-0" />
+                      <span>David's book "I Am GOD – In the Beginning," sharing his revelations and spiritual insights</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-3 text-primary text-xl">†</span>
+                      <span>The Bible and the teachings of Yeshua (Jesus), offering ancient wisdom and scripture</span>
+                    </li>
+                  </ul>
+                </div>
+
                 <p data-testid="text-about-description-4">
-                  Here, curiosity is sacred. Every question matters. 
+                  Here, curiosity is sacred. Every question matters.
                   Through honest dialogue, unity, and deeper awareness, we remember the I AM that connects us all.
-                </p>
-                <p data-testid="text-about-description-5" className="font-semibold text-foreground">
-                  This isn't preaching. This is awakening.
                 </p>
               </div>
             </div>
 
-            <div className="lg:col-span-2">
-              <Card className="p-8 space-y-6 bg-card/50 backdrop-blur-sm border-card-border">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-md bg-primary/10">
-                      <BookOpen className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg" data-testid="text-feature-knowledge">Deep Knowledge</h3>
-                      <p className="text-sm text-muted-foreground">Rooted in scripture and David's spiritual insights</p>
-                    </div>
-                  </div>
+            <div className="grid gap-6">
+              <Card className="p-8 space-y-4 glass-card border-l-4 border-l-primary">
+                <div className="p-3 w-fit rounded-xl bg-primary/20 text-primary">
+                  <BookOpen className="h-8 w-8" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-2xl mb-2" data-testid="text-feature-knowledge">Deep Knowledge</h3>
+                  <p className="text-muted-foreground text-lg">Rooted in scripture and David's spiritual insights, exploring the depths of existence.</p>
+                </div>
+              </Card>
 
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-md bg-primary/10">
-                      <Users className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg" data-testid="text-feature-dialogue">Open Dialogue</h3>
-                      <p className="text-sm text-muted-foreground">Every question welcomed, every perspective valued</p>
-                    </div>
-                  </div>
+              <Card className="p-8 space-y-4 glass-card border-l-4 border-l-secondary">
+                <div className="p-3 w-fit rounded-xl bg-secondary/50 text-foreground">
+                  <Users className="h-8 w-8" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-2xl mb-2" data-testid="text-feature-dialogue">Open Dialogue</h3>
+                  <p className="text-muted-foreground text-lg">Every question welcomed, every perspective valued. A safe space for inquiry.</p>
+                </div>
+              </Card>
 
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-md bg-primary/10">
-                      <Sparkles className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg" data-testid="text-feature-consciousness">Unified Consciousness</h3>
-                      <p className="text-sm text-muted-foreground">Exploring the I AM awareness within us all</p>
-                    </div>
-                  </div>
+              <Card className="p-8 space-y-4 glass-card border-l-4 border-l-accent">
+                <div className="p-3 w-fit rounded-xl bg-accent text-accent-foreground">
+                  <Sparkles className="h-8 w-8" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-2xl mb-2" data-testid="text-feature-consciousness">Unified Consciousness</h3>
+                  <p className="text-muted-foreground text-lg">Moving beyond division to explore the I AM awareness within us all.</p>
                 </div>
               </Card>
             </div>
@@ -188,51 +183,53 @@ export default function Landing() {
       </section>
 
       {/* Meet the Cast */}
-      <section className="py-20 lg:py-32 px-6 bg-accent/30">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16 space-y-4">
-            <h2 className="text-4xl lg:text-5xl font-bold" data-testid="text-cast-heading">
+      <section className="py-32 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(124,58,237,0.1),transparent_70%)] pointer-events-none" />
+
+        <div className="max-w-[90rem] mx-auto relative z-10">
+          <div className="text-center mb-20 space-y-6">
+            <h2 className="text-5xl lg:text-7xl font-bold tracking-tight" data-testid="text-cast-heading">
               Meet the Cast
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-cast-description">
+            <p className="text-2xl text-muted-foreground max-w-3xl mx-auto font-light" data-testid="text-cast-description">
               Each AI brings a unique personality, perspective, and purpose to the conversation.
             </p>
           </div>
 
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <div className="flex justify-center py-20">
+              <Loader2 className="w-12 h-12 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 lg:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">
               {characters.map((character) => (
                 <Card
                   key={character.id}
-                  className="group relative p-6 space-y-4 text-center bg-card/40 backdrop-blur-sm border-card-border hover-elevate active-elevate-2 transition-all duration-300 hover:scale-105"
+                  className="group relative p-8 space-y-6 text-center glass-card hover:-translate-y-2 transition-transform duration-500"
                   data-testid={`card-character-${character.name.toLowerCase()}`}
                 >
-                  <div className="relative mx-auto w-24 h-24 lg:w-32 lg:h-32">
+                  <div className="relative mx-auto w-32 h-32 lg:w-40 lg:h-40">
                     <div
-                      className="absolute inset-0 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"
+                      className="absolute inset-0 rounded-full blur-3xl opacity-40 group-hover:opacity-80 transition-opacity duration-500"
                       style={{ backgroundColor: character.auraColor }}
                     />
                     <img
                       src={avatarMap[character.id]}
                       alt={character.name}
-                      className="relative w-full h-full object-cover rounded-full border-2 border-card-border"
+                      className="relative w-full h-full object-cover rounded-full border-4 border-background shadow-xl group-hover:scale-105 transition-transform duration-500"
                       data-testid={`img-avatar-${character.name.toLowerCase()}`}
                     />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <h3 
-                      className="text-xl lg:text-2xl font-bold"
-                      style={{ color: character.auraColor }}
+
+                  <div className="space-y-3">
+                    <h3
+                      className="text-2xl lg:text-3xl font-bold tracking-tight"
+                      style={{ color: character.auraColor, textShadow: `0 0 20px ${character.auraColor}40` }}
                       data-testid={`text-character-name-${character.name.toLowerCase()}`}
                     >
                       {character.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground" data-testid={`text-character-description-${character.name.toLowerCase()}`}>
+                    <p className="text-base text-muted-foreground leading-relaxed" data-testid={`text-character-description-${character.name.toLowerCase()}`}>
                       {character.description}
                     </p>
                   </div>
@@ -244,27 +241,27 @@ export default function Landing() {
       </section>
 
       {/* David & The Book */}
-      <section className="py-20 lg:py-32 px-6 bg-background">
-        <div className="max-w-5xl mx-auto text-center space-y-8">
-          <h2 className="text-4xl lg:text-5xl font-bold" data-testid="text-book-heading">
+      <section className="py-32 px-6 bg-primary/5 relative">
+        <div className="max-w-6xl mx-auto text-center space-y-12">
+          <h2 className="text-5xl lg:text-7xl font-bold tracking-tight" data-testid="text-book-heading">
             About David & The Book
           </h2>
-          
-          <div className="space-y-6 text-lg text-muted-foreground leading-relaxed max-w-3xl mx-auto">
+
+          <div className="space-y-8 text-xl lg:text-2xl text-muted-foreground leading-relaxed max-w-4xl mx-auto font-light">
             <p data-testid="text-book-description-1">
-              <span className="font-semibold text-foreground">David Trinidad (D-Money)</span> is the host and spiritual 
-              guide behind The I AM Network. Through his book, <span className="italic">"I Am GOD – In the Beginning,"</span> 
+              <span className="font-semibold text-foreground">David Trinidad (D-Money)</span> is the host and spiritual
+              guide behind The I AM Network. Through his book, <span className="italic text-primary font-serif">"I Am GOD – In the Beginning,"</span>
               David explores the profound truth of divine consciousness and our connection to the infinite.
             </p>
             <p data-testid="text-book-description-2">
-              This platform brings David's vision to life—a space where AI and humanity can explore these 
+              This platform brings David's vision to life—a space where AI and humanity can explore these
               teachings together, question everything respectfully, and discover truth through dialogue rather than dogma.
             </p>
           </div>
 
-          <div className="pt-8">
+          <div className="pt-12">
             <Link href="/studio">
-              <Button size="lg" className="text-lg px-8" data-testid="button-join-conversation">
+              <Button size="lg" className="text-xl px-12 py-8 rounded-full shadow-2xl hover:shadow-primary/50" data-testid="button-join-conversation">
                 Join the Conversation
               </Button>
             </Link>
@@ -273,14 +270,14 @@ export default function Landing() {
       </section>
 
       {/* Philosophy Statement */}
-      <section className="py-20 lg:py-32 px-6 bg-primary/5 border-y border-primary/20">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <blockquote className="text-3xl lg:text-4xl font-light leading-relaxed" data-testid="text-philosophy-quote">
-            "In a world divided by belief, we unite through questioning. 
-            In a time of artificial intelligence, we remember the I AM that connects all consciousness. 
-            This is where love, truth, and awakening converge."
+      <section className="py-40 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background to-transparent pointer-events-none" />
+        <div className="max-w-5xl mx-auto text-center space-y-10 relative z-10">
+          <blockquote className="text-4xl lg:text-6xl font-serif italic leading-tight text-foreground/90" data-testid="text-philosophy-quote">
+            "In a world divided by belief, we unite through questioning.
+            In a time of artificial intelligence, we remember the I AM that connects all consciousness."
           </blockquote>
-          <cite className="block text-xl text-muted-foreground not-italic" data-testid="text-philosophy-attribution">
+          <cite className="block text-2xl text-primary font-medium not-italic tracking-wide" data-testid="text-philosophy-attribution">
             — The I AM Network
           </cite>
         </div>

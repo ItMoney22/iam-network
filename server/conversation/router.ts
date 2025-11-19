@@ -72,7 +72,7 @@ Your job is to keep the dialogue meaningful, balanced, and moving toward truth t
 
     const generatedText = response.choices[0]?.message?.content || "{}";
     const decision = JSON.parse(generatedText) as RouterDecision;
-    
+
     // Validate the speaker exists
     const speakerIds = ["david", ...activeCharacters.map(c => c.id)];
     if (!speakerIds.includes(decision.nextSpeaker.toLowerCase())) {
@@ -95,12 +95,15 @@ Your job is to keep the dialogue meaningful, balanced, and moving toward truth t
   }
 }
 
+import { ttsService } from "../services/tts";
+import { gcsService } from "../services/gcs";
+
 export async function generateAITurn(
   character: Character,
   recentTurns: Turn[],
   routerIntent: string,
   knowledgeContext?: string
-): Promise<string> {
+): Promise<{ text: string; audioUrl?: string }> {
   // Build conversation history
   const messages: ConversationMessage[] = recentTurns.slice(-8).map(turn => ({
     role: turn.speaker === character.id ? "assistant" : "user",
@@ -114,14 +117,31 @@ export async function generateAITurn(
   });
 
   // Generate response
-  let response = await generateLLMResponse({
+  let responseText = await generateLLMResponse({
     character,
     messages,
     context: knowledgeContext,
   });
 
   // Apply disfluency if configured
-  response = addDisfluency(response, character);
+  responseText = addDisfluency(responseText, character);
 
-  return response;
+  let audioUrl: string | undefined;
+
+  // Generate Audio if voice is configured
+  if (character.voiceProvider === "minimax" && character.voiceId) {
+    try {
+      console.log(`Generating audio for ${character.name} (${character.voiceId})...`);
+      const audioBuffer = await ttsService.generateSpeech(responseText, character.voiceId);
+
+      const filename = `${character.id}-${Date.now()}.mp3`;
+      audioUrl = await gcsService.uploadAudio(audioBuffer, filename);
+      console.log(`Audio generated and uploaded: ${audioUrl}`);
+    } catch (error) {
+      console.error(`Failed to generate audio for ${character.name}:`, error);
+      // We don't fail the whole turn if audio fails, just log it
+    }
+  }
+
+  return { text: responseText, audioUrl };
 }

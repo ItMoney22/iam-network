@@ -69,12 +69,13 @@ export function registerZeroRoutes(app: Express) {
         source: source || 'web',
       });
 
-      // Send back JSON with base64 audio
+      // Send back JSON with base64 audio (optional)
       res.json({
         transcription: result.text,
         response: result.response.message,
         actions: result.response.actions,
-        audio: result.audio.toString('base64'),
+        audio: result.audio ? result.audio.toString('base64') : null,
+        audioError: result.audioError,
         mode: result.response.mode,
       });
     } catch (error) {
@@ -104,6 +105,13 @@ export function registerZeroRoutes(app: Express) {
         mode: mode || 'conversation',
         source: source || 'web',
       });
+
+      if (!result.audio) {
+        return res.status(503).json({
+          error: 'Audio generation unavailable',
+          details: result.audioError || 'Text-to-speech failed',
+        });
+      }
 
       // Set headers for audio stream
       res.setHeader('Content-Type', 'audio/mpeg');

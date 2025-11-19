@@ -3,7 +3,7 @@
  * Talk to Zero with your voice - he'll respond with voice too
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type FormEvent } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Mic, MicOff, Loader2, Volume2 } from 'lucide-react';
@@ -20,6 +20,8 @@ export function ZeroVoiceChat() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [textInput, setTextInput] = useState('');
+  const [isSendingText, setIsSendingText] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -111,6 +113,8 @@ export function ZeroVoiceChat() {
       // Play Zero's audio response
       if (result.audio) {
         playAudio(result.audio);
+      } else if (result.audioError) {
+        setError(result.audioError);
       }
     } catch (err) {
       console.error('Error communicating with Zero:', err);
@@ -142,6 +146,61 @@ export function ZeroVoiceChat() {
       setError('Failed to play audio response');
       setIsPlaying(false);
     }
+  };
+
+  const sendTextMessage = async () => {
+    if (!textInput.trim()) {
+      return;
+    }
+
+    setIsSendingText(true);
+    setError(null);
+
+    const userText = textInput.trim();
+    const history = messages.map(msg => ({
+      role: msg.role === 'zero' ? 'assistant' : 'user',
+      content: msg.text,
+    }));
+
+    try {
+      const response = await fetch('/api/zero/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...history, { role: 'user', content: userText }],
+          mode: 'conversation',
+          source: 'web',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      setMessages(prev => ([
+        ...prev,
+        { role: 'user', text: userText, timestamp: new Date() },
+        { role: 'zero', text: result.message || 'Zero responded with no text.', timestamp: new Date() },
+      ]));
+      setTextInput('');
+    } catch (err) {
+      console.error('Error sending text to Zero:', err);
+      setError('Failed to send text message to Zero. Please try again.');
+    } finally {
+      setIsSendingText(false);
+    }
+  };
+
+  const handleTextSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSendingText) {
+      return;
+    }
+    void sendTextMessage();
   };
 
   return (
@@ -221,6 +280,31 @@ export function ZeroVoiceChat() {
             </div>
           )}
         </div>
+      </Card>
+
+      <Card className="p-6 bg-gray-900/40 border-gray-700/60">
+        <h3 className="text-2xl font-semibold text-white mb-4">Send text to Zero</h3>
+        <form onSubmit={handleTextSubmit} className="space-y-4">
+          <textarea
+            value={textInput}
+            onChange={(event) => setTextInput(event.target.value)}
+            placeholder="Type what you want to say to Zero..."
+            className="w-full min-h-[120px] rounded-lg bg-black/40 text-white border border-purple-500/30 p-4 focus:outline-none focus:ring-2 focus:ring-purple-500/70"
+            disabled={isSendingText}
+          />
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <p className="text-gray-400 text-sm">
+              Use this if your microphone is blocked or Zero can't play audio.
+            </p>
+            <Button
+              type="submit"
+              disabled={isSendingText || !textInput.trim()}
+              className="md:w-auto w-full"
+            >
+              {isSendingText ? 'Sending...' : 'Send to Zero'}
+            </Button>
+          </div>
+        </form>
       </Card>
 
       {/* Conversation History */}

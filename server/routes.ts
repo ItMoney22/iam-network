@@ -60,18 +60,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { isActive } = req.body;
-      
+
       if (typeof isActive !== "boolean") {
         return res.status(400).json({ error: "isActive must be a boolean" });
       }
-      
+
       await storage.updateCharacterActive(id, isActive);
       const updated = await storage.getCharacter(id);
-      
+
       if (!updated) {
         return res.status(404).json({ error: "Character not found" });
       }
-      
+
       res.json(updated);
     } catch (error) {
       console.error("Error updating character:", error);
@@ -131,7 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/conversation/next", async (req, res) => {
     try {
       const { episodeId, theme, debateHeat } = req.body;
-      
+
       // Get recent turns and active characters
       const recentTurns = await storage.getTurnsByEpisode(episodeId);
       const activeCharacters = await storage.getActiveCharacters();
@@ -173,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const response = await generateAITurn(
+      const { text, audioUrl } = await generateAITurn(
         character,
         recentTurns.slice(-8),
         routerIntent || "continue_dialogue",
@@ -184,9 +184,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const turn = await storage.createTurn({
         episodeId,
         speaker: character.id,
-        text: response,
+        text: text,
         type: "ai",
         isHighlight: false,
+        metadata: audioUrl ? { audioUrl } : undefined,
       });
 
       res.json(turn);
@@ -213,11 +214,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { episodeId } = req.params;
       const prep = await storage.getPreshowPrepByEpisode(episodeId);
-      
+
       if (!prep) {
         return res.status(404).json({ error: "Prep not found" });
       }
-      
+
       res.json(prep);
     } catch (error) {
       console.error("Error fetching preshow prep:", error);
@@ -257,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error creating preshow prep:", error);
       console.error("Error details:", error instanceof Error ? error.message : String(error));
       console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to create prep sheet",
         details: error instanceof Error ? error.message : String(error)
       });
@@ -268,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/knowledge", async (req, res) => {
     try {
       const { query, source, limit } = req.query;
-      
+
       const passages = await getRelevantPassages({
         query: query as string || "",
         source: source as "book" | "bible" | "both" || "both",

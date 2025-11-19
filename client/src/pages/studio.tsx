@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Settings, ChevronLeft, Loader2, Send, Sparkles } from "lucide-react";
 import { Link } from "wouter";
-import { 
-  fetchActiveCharacters, 
-  fetchEpisodes, 
+import {
+  fetchActiveCharacters,
+  fetchEpisodes,
   fetchEpisodeTurns,
   addConversationTurn,
   routeNextSpeaker,
@@ -99,7 +99,7 @@ export default function Studio() {
 
   const generateNextAITurn = async () => {
     if (!currentEpisode || isGenerating) return;
-    
+
     setIsGenerating(true);
     setRouterReasoning(null);
     try {
@@ -126,7 +126,7 @@ export default function Studio() {
 
       // Refresh turns
       queryClient.invalidateQueries({ queryKey: ["/api/episodes", currentEpisode.id, "turns"] });
-      
+
       toast({
         title: "AI Response Generated",
         description: `${speakerName} has responded`,
@@ -154,6 +154,29 @@ export default function Studio() {
     }
     sendMessageMutation.mutate(message);
   };
+
+  // Audio playback
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const lastPlayedTurnIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (turns.length > 0) {
+      const lastTurn = turns[turns.length - 1];
+
+      // Check if it's a new turn and has audio
+      if (lastTurn.id !== lastPlayedTurnIdRef.current && lastTurn.metadata && (lastTurn.metadata as any).audioUrl) {
+        const audioUrl = (lastTurn.metadata as any).audioUrl;
+
+        if (audioRef.current) {
+          audioRef.current.src = audioUrl;
+          audioRef.current.play().catch(e => console.error("Audio play failed:", e));
+          setIsPlaying(true);
+          lastPlayedTurnIdRef.current = lastTurn.id;
+        }
+      }
+    }
+  }, [turns]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -232,6 +255,20 @@ export default function Studio() {
             </div>
           )}
 
+          {/* Audio Status Indicator */}
+          {isPlaying && (
+            <div className="px-6 py-2 bg-indigo-900/30 border-b border-indigo-500/20 animate-pulse">
+              <div className="max-w-4xl mx-auto flex items-center gap-2 justify-center">
+                <div className="flex gap-1 items-end h-4">
+                  <div className="w-1 bg-primary h-2 animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                  <div className="w-1 bg-primary h-4 animate-bounce" style={{ animationDelay: "100ms" }}></div>
+                  <div className="w-1 bg-primary h-3 animate-bounce" style={{ animationDelay: "200ms" }}></div>
+                </div>
+                <p className="text-xs font-medium text-primary">Speaking...</p>
+              </div>
+            </div>
+          )}
+
           {/* Messages */}
           <ScrollArea className="flex-1 p-6">
             <div className="max-w-4xl mx-auto space-y-4">
@@ -247,63 +284,62 @@ export default function Studio() {
               ) : (
                 <>
                   {turns.map((turn) => {
-                  const isHost = turn.speaker === "david";
-                  const character = activeCharacters.find(c => c.id === turn.speaker);
-                  const displayName = isHost ? "David Trinidad" : character?.name || turn.speaker;
-                  const avatarUrl = turn.speaker !== "david" ? avatarMap[turn.speaker] : null;
-                  
-                  return (
-                    <div
-                      key={turn.id}
-                      className={`flex gap-4 ${isHost ? "flex-row-reverse" : "flex-row"}`}
-                      data-testid={`message-${turn.id}`}
-                    >
-                      {/* Avatar */}
-                      <div className="flex-shrink-0">
-                        {avatarUrl ? (
-                          <img
-                            src={avatarUrl}
-                            alt={displayName}
-                            className="w-10 h-10 rounded-full object-cover border-2"
-                            style={{
-                              borderColor: character?.auraColor || "hsl(var(--primary))",
-                            }}
-                          />
-                        ) : (
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2"
-                            style={{
-                              borderColor: "hsl(280, 70%, 65%)",
-                              backgroundColor: "hsl(280, 70%, 20%)",
-                            }}
-                          >
-                            DT
-                          </div>
-                        )}
-                      </div>
+                    const isHost = turn.speaker === "david";
+                    const character = activeCharacters.find(c => c.id === turn.speaker);
+                    const displayName = isHost ? "David Trinidad" : character?.name || turn.speaker;
+                    const avatarUrl = turn.speaker !== "david" ? avatarMap[turn.speaker] : null;
 
-                      {/* Message Bubble */}
-                      <div className={`flex-1 max-w-2xl ${isHost ? "text-right" : "text-left"}`}>
-                        <div className="flex items-baseline gap-2 mb-1">
-                          <span className={`text-sm font-semibold ${isHost ? "order-2" : "order-1"}`}>
-                            {displayName}
-                          </span>
-                          <span className={`text-xs text-muted-foreground ${isHost ? "order-1" : "order-2"}`}>
-                            {new Date(turn.timestamp).toLocaleTimeString()}
-                          </span>
+                    return (
+                      <div
+                        key={turn.id}
+                        className={`flex gap-4 ${isHost ? "flex-row-reverse" : "flex-row"}`}
+                        data-testid={`message-${turn.id}`}
+                      >
+                        {/* Avatar */}
+                        <div className="flex-shrink-0">
+                          {avatarUrl ? (
+                            <img
+                              src={avatarUrl}
+                              alt={displayName}
+                              className="w-10 h-10 rounded-full object-cover border-2"
+                              style={{
+                                borderColor: character?.auraColor || "hsl(var(--primary))",
+                              }}
+                            />
+                          ) : (
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2"
+                              style={{
+                                borderColor: "hsl(280, 70%, 65%)",
+                                backgroundColor: "hsl(280, 70%, 20%)",
+                              }}
+                            >
+                              DT
+                            </div>
+                          )}
                         </div>
-                        <div
-                          className={`inline-block px-4 py-3 rounded-lg ${
-                            isHost
+
+                        {/* Message Bubble */}
+                        <div className={`flex-1 max-w-2xl ${isHost ? "text-right" : "text-left"}`}>
+                          <div className="flex items-baseline gap-2 mb-1">
+                            <span className={`text-sm font-semibold ${isHost ? "order-2" : "order-1"}`}>
+                              {displayName}
+                            </span>
+                            <span className={`text-xs text-muted-foreground ${isHost ? "order-1" : "order-2"}`}>
+                              {new Date(turn.timestamp).toLocaleTimeString()}
+                            </span>
+                          </div>
+                          <div
+                            className={`inline-block px-4 py-3 rounded-lg ${isHost
                               ? "bg-primary text-primary-foreground"
                               : "bg-card border border-border"
-                          }`}
-                        >
-                          <p className="whitespace-pre-wrap">{turn.text}</p>
+                              }`}
+                          >
+                            <p className="whitespace-pre-wrap">{turn.text}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
+                    );
                   })}
                   <div ref={messagesEndRef} />
                 </>
@@ -413,6 +449,14 @@ export default function Studio() {
           </div>
         </div>
       </div>
+
+      {/* Hidden Audio Element */}
+      <audio
+        ref={audioRef}
+        onEnded={() => setIsPlaying(false)}
+        onPause={() => setIsPlaying(false)}
+        className="hidden"
+      />
     </div>
   );
 }

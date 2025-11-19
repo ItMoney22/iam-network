@@ -115,8 +115,9 @@ class ZeroService {
    */
   async voiceChat(audioBuffer: Buffer, options: ZeroChatOptions = {}): Promise<{
     text: string;
-    audio: Buffer;
+    audio: Buffer | null;
     response: ZeroResponse;
+    audioError?: string;
   }> {
     // Step 1: Speech-to-Text (Whisper)
     const transcription = await this.speechToText(audioBuffer);
@@ -127,13 +128,21 @@ class ZeroService {
       options
     );
 
-    // Step 3: Text-to-Speech
-    const audioResponse = await this.textToSpeech(response.message);
+    // Step 3: Text-to-Speech (non-blocking)
+    let audioResponse: Buffer | null = null;
+    let audioError: string | undefined;
+    try {
+      audioResponse = await this.textToSpeech(response.message);
+    } catch (error) {
+      console.error('Text-to-speech error (non-fatal):', error);
+      audioError = 'Text-to-speech unavailable. Configure REPLICATE_API_KEY to enable voice playback.';
+    }
 
     return {
       text: transcription,
       audio: audioResponse,
       response,
+      audioError,
     };
   }
 

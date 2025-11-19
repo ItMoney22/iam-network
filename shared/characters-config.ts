@@ -34,6 +34,8 @@ export const CHARACTERS: CharacterConfig[] = [
     avatarImageUrl: "@assets/generated_images/Marcus_wise_director_portrait_435ea3ff.png",
     auraColor: "hsl(210, 100%, 60%)",
     accentTone: "Measured, purposeful, deeply present",
+    voiceProvider: "minimax",
+    voiceId: "male-01",
   },
   {
     id: "elena",
@@ -50,6 +52,8 @@ export const CHARACTERS: CharacterConfig[] = [
     avatarImageUrl: "@assets/generated_images/Elena_skeptic_portrait_1a9bec4a.png",
     auraColor: "hsl(15, 100%, 60%)",
     accentTone: "Quick, sarcastic, unafraid to challenge",
+    voiceProvider: "minimax",
+    voiceId: "female-01",
   },
   {
     id: "sophia",
@@ -66,6 +70,8 @@ export const CHARACTERS: CharacterConfig[] = [
     avatarImageUrl: "@assets/generated_images/Sophia_healer_portrait_98fc9eec.png",
     auraColor: "hsl(160, 70%, 55%)",
     accentTone: "Gentle, nurturing, deeply empathetic",
+    voiceProvider: "minimax",
+    voiceId: "female-02",
   },
   {
     id: "james",
@@ -82,6 +88,8 @@ export const CHARACTERS: CharacterConfig[] = [
     avatarImageUrl: "@assets/generated_images/James_conspiracy_hunter_portrait_f8ccb042.png",
     auraColor: "hsl(270, 70%, 60%)",
     accentTone: "Curious, investigative, seeing beyond the surface",
+    voiceProvider: "minimax",
+    voiceId: "male-02",
   },
   {
     id: "destiny",
@@ -98,6 +106,8 @@ export const CHARACTERS: CharacterConfig[] = [
     avatarImageUrl: "@assets/generated_images/Destiny_motivation_portrait_ae027adf.png",
     auraColor: "hsl(45, 100%, 60%)",
     accentTone: "Energetic, uplifting, powerfully positive",
+    voiceProvider: "minimax",
+    voiceId: "female-03",
   },
   {
     id: "nathan",
@@ -114,6 +124,8 @@ export const CHARACTERS: CharacterConfig[] = [
     avatarImageUrl: "@assets/generated_images/Nathan_news_oracle_portrait_72673636.png",
     auraColor: "hsl(190, 80%, 55%)",
     accentTone: "Informed, analytical, connects dots across time",
+    voiceProvider: "minimax",
+    voiceId: "male-03",
   },
   {
     id: "rachel",
@@ -130,6 +142,8 @@ export const CHARACTERS: CharacterConfig[] = [
     avatarImageUrl: "@assets/generated_images/Rachel_scripture_monk_portrait_230035c2.png",
     auraColor: "hsl(35, 80%, 55%)",
     accentTone: "Scholarly, reverent, deeply knowledgeable",
+    voiceProvider: "minimax",
+    voiceId: "female-04",
   },
   {
     id: "victor",
@@ -146,6 +160,8 @@ export const CHARACTERS: CharacterConfig[] = [
     avatarImageUrl: "@assets/generated_images/Victor_wealth_architect_portrait_2e555de5.png",
     auraColor: "hsl(140, 70%, 50%)",
     accentTone: "Strategic, abundant, seeing resources everywhere",
+    voiceProvider: "minimax",
+    voiceId: "male-04",
   },
   {
     id: "maya",
@@ -162,6 +178,8 @@ export const CHARACTERS: CharacterConfig[] = [
     avatarImageUrl: "@assets/generated_images/Maya_style_icon_portrait_d6f58477.png",
     auraColor: "hsl(320, 85%, 60%)",
     accentTone: "Creative, expressive, unapologetically unique",
+    voiceProvider: "minimax",
+    voiceId: "female-05",
   },
   {
     id: "isaac",
@@ -178,5 +196,7 @@ export const CHARACTERS: CharacterConfig[] = [
     avatarImageUrl: "@assets/generated_images/Isaac_future_prophet_portrait_90635f7d.png",
     auraColor: "hsl(0, 0%, 90%)",
     accentTone: "Visionary, transcendent, beyond linear time",
+    voiceProvider: "minimax",
+    voiceId: "male-05",
   },
 ];
