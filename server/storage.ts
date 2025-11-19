@@ -29,6 +29,7 @@ export interface IStorage {
   getActiveCharacters(): Promise<Character[]>;
   updateCharacterActive(id: string, isActive: boolean): Promise<void>;
   upsertCharacter(character: InsertCharacter): Promise<Character>;
+  updateCharacterPersonality(id: string, traits: Partial<Character>): Promise<Character>;
 
   // Preshow Prep
   createPreshowPrep(prep: InsertPreshowPrep): Promise<PreshowPrep>;
@@ -118,6 +119,15 @@ export class DatabaseStorage implements IStorage {
         target: characters.id,
         set: insertCharacter,
       })
+      .returning();
+    return character;
+  }
+
+  async updateCharacterPersonality(id: string, traits: Partial<Character>): Promise<Character> {
+    const [character] = await db
+      .update(characters)
+      .set(traits)
+      .where(eq(characters.id, id))
       .returning();
     return character;
   }

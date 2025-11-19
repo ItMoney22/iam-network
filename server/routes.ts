@@ -84,6 +84,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH /api/characters/:id/personality - Update character personality traits
+  app.patch("/api/characters/:id/personality", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { engagement, depth, challenge, spirituality, humor } = req.body;
+
+      const traits: Record<string, any> = {};
+      if (engagement !== undefined) traits.engagement = engagement;
+      if (depth !== undefined) traits.depth = depth;
+      if (challenge !== undefined) traits.challenge = challenge;
+      if (spirituality !== undefined) traits.spirituality = spirituality;
+      if (humor !== undefined) traits.humor = humor;
+
+      const updated = await storage.updateCharacterPersonality(id, traits);
+
+      if (!updated) {
+        return res.status(404).json({ error: "Character not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating character personality:", error);
+      res.status(500).json({ error: "Failed to update character personality" });
+    }
+  });
+
   // GET /api/episodes - Get all episodes
   app.get("/api/episodes", async (req, res) => {
     try {

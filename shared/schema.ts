@@ -44,6 +44,12 @@ export const characters = pgTable("characters", {
   auraColor: text("aura_color").notNull(), // CSS color for glow effects
   accentTone: text("accent_tone"), // Additional personality notes
   isActive: boolean("is_active").notNull().default(true),
+  // Personality Sliders (0-100)
+  engagement: integer("engagement").notNull().default(80),
+  depth: integer("depth").notNull().default(80),
+  challenge: integer("challenge").notNull().default(50),
+  spirituality: integer("spirituality").notNull().default(70),
+  humor: integer("humor").notNull().default(30),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

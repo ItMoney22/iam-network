@@ -24,6 +24,9 @@ import { ChatMonitorPanel } from "@/components/studio/ChatMonitorPanel";
 import { QuickActions } from "@/components/studio/QuickActions";
 import { MessageTemplates } from "@/components/studio/MessageTemplates";
 import { AICoPilotPanel } from "@/components/studio/AICoPilotPanel";
+import { PersonalityControls } from "@/components/studio/PersonalityControls";
+import { DirectorMode } from "@/components/studio/DirectorMode";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import marcusAvatar from "@/assets/generated_images/Marcus_wise_director_portrait_sv5sm1qh.png";
 import elenaAvatar from "@/assets/generated_images/Elena_skeptic_portrait_gafo9wcq.png";
@@ -398,39 +401,62 @@ export default function Studio() {
           </div>
         </div>
 
-        {/* Right Panel: Monitor & Participants */}
+        {/* Right Panel: Tools & Participants */}
         {showRightPanel && (
           <div className="w-80 shrink-0 border-l border-border flex flex-col hidden lg:flex bg-card/10">
-            <div className="h-1/2 border-b border-border overflow-hidden">
-              <ChatMonitorPanel onAddressAlert={(text) => setMessage(prev => prev + " " + text)} />
-            </div>
-            <div className="h-1/2 flex flex-col">
-              <div className="p-3 border-b border-border bg-card/30">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Participants</h3>
+            <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+              <div className="px-2 pt-2">
+                <TabsList className="w-full grid grid-cols-4 h-8">
+                  <TabsTrigger value="chat" className="text-xs px-0">Chat</TabsTrigger>
+                  <TabsTrigger value="people" className="text-xs px-0">People</TabsTrigger>
+                  <TabsTrigger value="director" className="text-xs px-0">Direct</TabsTrigger>
+                  <TabsTrigger value="tuner" className="text-xs px-0">Tune</TabsTrigger>
+                </TabsList>
               </div>
-              <ScrollArea className="flex-1">
-                <div className="p-3 space-y-2">
-                   <div className="flex items-center gap-2 p-2 rounded hover:bg-card/50 transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">DT</div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">David Trinidad</p>
-                      <p className="text-xs text-muted-foreground">Host</p>
-                    </div>
-                    <Badge variant="secondary" className="ml-auto text-[10px] h-5">Host</Badge>
-                  </div>
-                  
-                  {activeCharacters.map((character) => (
-                    <div key={character.id} className="flex items-center gap-2 p-2 rounded hover:bg-card/50 transition-colors">
-                      <img src={avatarMap[character.id]} alt={character.name} className="w-8 h-8 rounded-full object-cover" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{character.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{character.role}</p>
-                      </div>
-                    </div>
-                  ))}
+
+              <TabsContent value="chat" className="flex-1 overflow-hidden mt-0 border-none data-[state=active]:flex flex-col">
+                <ChatMonitorPanel onAddressAlert={(text) => setMessage(prev => prev + " " + text)} />
+              </TabsContent>
+
+              <TabsContent value="people" className="flex-1 overflow-hidden mt-0 border-none data-[state=active]:flex flex-col">
+                <div className="p-3 border-b border-border bg-card/30">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Participants</h3>
                 </div>
-              </ScrollArea>
-            </div>
+                <ScrollArea className="flex-1">
+                  <div className="p-3 space-y-2">
+                     <div className="flex items-center gap-2 p-2 rounded hover:bg-card/50 transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">DT</div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">David Trinidad</p>
+                        <p className="text-xs text-muted-foreground">Host</p>
+                      </div>
+                      <Badge variant="secondary" className="ml-auto text-[10px] h-5">Host</Badge>
+                    </div>
+                    
+                    {activeCharacters.map((character) => (
+                      <div key={character.id} className="flex items-center gap-2 p-2 rounded hover:bg-card/50 transition-colors">
+                        <img src={avatarMap[character.id]} alt={character.name} className="w-8 h-8 rounded-full object-cover" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{character.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{character.role}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="director" className="flex-1 overflow-hidden mt-0 border-none data-[state=active]:flex flex-col">
+                <DirectorMode 
+                  activeCharacters={activeCharacters} 
+                  onExecutePlan={() => toast({ title: "Director Mode", description: "Sequence executed (Simulated)" })} 
+                />
+              </TabsContent>
+
+              <TabsContent value="tuner" className="flex-1 overflow-hidden mt-0 border-none data-[state=active]:flex flex-col">
+                <PersonalityControls activeCharacters={activeCharacters} />
+              </TabsContent>
+            </Tabs>
           </div>
         )}
       </div>
